@@ -10,6 +10,8 @@ host = "192.168.1.66"
 port = 5555
 is_waiting_for_connexion = False
 
+state = ""
+
 #Dimensions écran
 winWidth = 500
 winHeight = 500
@@ -33,44 +35,35 @@ class button(object):
     def draw(self, win):
         pygame.draw.rect(win, (0,0,0), self.hitbox)
 
-def redrawWindow():
-    if not is_waiting_for_connexion :
+def redrawWindow(state):
+    if state != "waiting for connexion" :
+        print("non")
         win.fill((255, 255, 255))
         btnTest1.draw(win)
         btnTest2.draw(win)
         pygame.display.update()
 
-    if is_waiting_for_connexion :
-        win.fill((255, 255, 255))
-        # pick a font you have and set its size
-        myfont = pygame.font.SysFont("Comic Sans MS", 30)
-        # apply it to text on a label
-        label = myfont.render("Python and Pygame are Fun!", 1, yellow)
-        # put the label object on the screen at point x=100, y=100
-        win.blit(label, (100, 100))
+    elif state == "waiting for connexion" :
+        print("oui")
+        win.fill((100, 0, 0))
         pygame.display.update()
 
 
 btnTest1 = button(200, 200, 100, 100, "btnTest1")
 btnTest2 = button(400, 200, 100, 100, "btnTest2")
 
-def launch_server(threads, is_waiting_for_connexion):
-    if not is_waiting_for_connexion :
-        is_waiting_for_connexion = True
-        print(is_waiting_for_connexion)
+def launch_server(threads, state):
+    if state != "waiting for connexion" :
         serv = server.Server()
         serv.create_server(host, port)
         wait = threading.Thread(target=serv.wait_for_a_connection)
         threads.append(wait)
         wait.start()
-        is_waiting_for_connexion = True
-    else :
-        stop = threading.Thread(target=serv.socket.shutdown)
-        print("shutdown")
-        stop.start()
+        state = "waiting for connexion"
+
 
 def main():
-    is_waiting_for_connexion = False
+    state = ""
     threads = [threading.Thread]
     run = True
     serv = None
@@ -80,7 +73,7 @@ def main():
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                print("yes") #??????????????????????????????
+                print("Quit") #??????????????????????????????
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((host, port))
                 run = False
@@ -100,7 +93,8 @@ def main():
             if mouse == btnTest1.id and not(clic):
                 clic = True
                 print("Bouton server")
-                launch_server(threads, is_waiting_for_connexion)
+                launch_server(threads, state)
+                state = "waiting for connexion"
 
             if mouse == btnTest2.id and not(clic):
                 clic = True
@@ -110,7 +104,7 @@ def main():
         else :
             clic = False
             
-        redrawWindow()
+        redrawWindow(state)
 
 main()
 pygame.quit()
