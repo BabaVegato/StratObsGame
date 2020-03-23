@@ -21,5 +21,9 @@ while True:
     print(f"Connection from {addr} has been established !")
     msg = pickle.dumps(d)
     conn.send(msg)
+    print("Sent an object : ", d)
+    received = conn.recv(2048)
+    obj = pickle.loads(received)
+    print("Received an object : ", obj)
 
 

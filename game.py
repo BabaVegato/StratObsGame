@@ -1,10 +1,16 @@
 import pygame
+import client
+import threading
 
 pygame.init()
+
+host = "192.168.1.66"
+port = 5555
 
 #Dimensions écran
 winWidth = 500
 winHeight = 500
+d = {1: winWidth, 2: winHeight}
 
 win = pygame.display.set_mode((winWidth, winHeight))
 
@@ -53,6 +59,8 @@ def main():
             if mouse == btnTest.id and not(clic):
                 clic = True
                 print("Bouton")
+                cli = client.create_client(host, port)
+                client.send_obj(cli, d)
         else :
             clic = False
             

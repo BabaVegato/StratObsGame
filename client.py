@@ -1,16 +1,18 @@
 import socket
 import pickle
 
-host = "192.168.1.66"
-port = 5555
-HEADERSIZE = 10
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((host, port))
+def create_client(host, port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((host, port))
+    return s
 
-while True : 
-    full_msg = b''
-    new_msg = True
+def wait_for_object():
     while True:
         msg = s.recv(2048)
-        
+        d = pickle.loads(msg)
+        print(d)
+
+def send_obj(socket, obj):
+    msg = pickle.dumps(obj)
+    socket.send(msg)
