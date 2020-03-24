@@ -5,7 +5,7 @@ import select
 
 class Server:
     def __init__(self):
-        self.host = "192.168.1.66"
+        self.host = "192.168.1.68"
         self.port = 5555
         self.socket = None
         self.running = False

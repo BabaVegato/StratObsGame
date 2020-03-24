@@ -8,7 +8,7 @@ import time
 
 pygame.init()
 
-host = "192.168.1.66"
+host = "192.168.1.68"
 port = 5555
 is_waiting_for_connexion = False
 
