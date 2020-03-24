@@ -68,7 +68,7 @@ def redrawWindow(state):
     elif state =="map creation":
         win.fill((240, 240, 240))
         font = pygame.font.Font(r"C:\Users\Baptiste\Desktop\Eyes\StratObsGame\media\BlackOpsOne-Regular.ttf",30)
-        text = font.render("Map creation", True, (0, 128, 0))
+        text = font.render("Create the map", True, (0, 128, 0))
         win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//4 - text.get_height() // 2))
         pygame.display.update()
 
@@ -86,6 +86,7 @@ def adapt_to_server(cli, state):
     cli.stop_wait = True
     if cli.state_rcvd != None :
         state = cli.state_rcvd.get(1)
+        cli.state_rcvd = None
         return state
 
 def main():
@@ -131,17 +132,26 @@ def main():
                     print("Bouton client")
                     cli = client.Client()
                     cli.create_client(host, port)
-                    threading.Thread(target=cli.wait_for_object()).start()
+                    
                     info_sent = False
             else :
                 clic = False
                 
-        if state == "waiting for connexion" :
+        elif state == "waiting for connexion" :
             if serv.conn_addr != None :
                 state = "connexion established"
                 info_sent = False
-        
-        info = {1 : "connexion established"}
+
+        elif state == "connexion established":
+                state = "map creation"
+                info_sent = False
+
+        info = {1 : state}
+        if (serv == None) & (cli != None):
+            cli.stop_wait = False
+            wait = threading.Thread(target=cli.wait_for_object())
+            wait.start()
+            
 
         if (serv != None) & (cli == None) & (not info_sent):
             if serv.conn != None :
