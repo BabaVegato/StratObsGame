@@ -3,8 +3,6 @@ import threading
 import pickle
 import select
 
-d = {1: "hey", 2: "there"}
-
 class Server:
     def __init__(self):
         self.host = "192.168.1.66"
@@ -19,6 +17,7 @@ class Server:
         self.socket.listen()
         self.running = True
         self.conn_addr = None
+        self.conn = None
         print("Listening on port 5555 ...")
 
     def wait_for_a_connection(self):
@@ -32,13 +31,13 @@ class Server:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
 
-    def send_obj(conn, obj):
+    def send_obj(self, conn, obj):
         msg = pickle.dumps(obj)
         self.conn.send(msg)
         print("Sent an object : ", obj)
         
 
-    def wait_for_obj(conn):
+    def wait_for_obj(self, conn):
         received = conn.recv(2048)
         obj = pickle.loads(received)
         print("Received an object : ", obj)
