@@ -6,7 +6,7 @@ import socket
 
 pygame.init()
 
-host = "192.168.1.66"
+host = "192.168.1.68"
 port = 5555
 is_waiting_for_connexion = False
 
@@ -79,7 +79,7 @@ def main():
 
     while run:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT: 
                 print("yes") #??????????????????????????????
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((host, port))
