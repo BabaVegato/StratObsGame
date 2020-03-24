@@ -4,15 +4,16 @@ import server
 import threading
 import socket
 import time
-
+import ipaddress
 
 pygame.init()
 
-host = "192.168.1.68"
+host = socket.gethostbyname(socket.gethostname())
 port = 5555
 is_waiting_for_connexion = False
 
 state = ""
+
 
 
 #Dimensions écran
