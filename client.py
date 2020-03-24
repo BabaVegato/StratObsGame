@@ -1,18 +1,25 @@
 import socket
 import pickle
 
+class Client : 
+    def __init__(self):
+        self.state_rcvd = None
+        self.server_socket = None
+        self.socket = None
+        self.stop_wait = False
 
-def create_client(host, port):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((host, port))
-    return s
+    def create_client(self, host, port):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.connect((host, port))
 
-def wait_for_object():
-    while True:
-        msg = s.recv(2048)
-        d = pickle.loads(msg)
-        print(d)
+    def wait_for_object(self):
+        d = None
+        while d == None:
+            msg = self.socket.recv(2048)
+            d = pickle.loads(msg)
+            self.state_rcvd = d
+            print("Object received : ", d)
 
-def send_obj(socket, obj):
-    msg = pickle.dumps(obj)
-    socket.send(msg)
+    def send_obj(self, obj):
+        msg = pickle.dumps(obj)
+        self.server_socket.send(msg)
