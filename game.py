@@ -67,6 +67,8 @@ class case(object):
 
 class case2(object):
     def __init__(self, i, j):
+        self.col = j
+        self.lig = i
         self.type = "case"
         self.id = "case" + str(i) + str(j)
         self.lignes = 11
@@ -82,8 +84,12 @@ class case2(object):
         self.hitbox = (self.x, self.y, self.width, self.height)
         self.xMax = self.x + self.width
         self.yMax = self.y + self.height
+        self.wall = False
     def draw(self, win):
-        pygame.draw.rect(win, GRIS, self.hitbox)
+        if not(self.wall):
+            pygame.draw.rect(win, GRIS, self.hitbox)
+        else :
+            pygame.draw.rect(win, DARK_GREY, self.hitbox)
 
 class button(object):
     def __init__(self, x, y, width, height, id, text):
@@ -104,6 +110,7 @@ class button(object):
 
 class obstacle(object):
     def __init__(self, x, y, shape, id, case):
+        self.placed = False
         self.type = "obstacle"
         self.x = x
         self.y = y
@@ -136,11 +143,12 @@ class obstacle(object):
         hitbox = (x, y, self.width, self.height)
         hitboxT1 = (x, y, self.case.width*3+self.case.gap*2, self.case.height+self.case.gap)
         hitboxT2 = (x+self.case.width+self.case.gap, y+self.case.height+self.case.gap, self.case.width+self.case.gap, self.case.height+self.case.gap)
-        if self.shape == "t":
-            pygame.draw.rect(win, DARK_GREY, hitboxT1)
-            pygame.draw.rect(win, DARK_GREY, hitboxT2)
-        else :
-            pygame.draw.rect(win, DARK_GREY, hitbox)
+        if not(self.placed):
+            if self.shape == "t":
+                pygame.draw.rect(win, DARK_GREY, hitboxT1)
+                pygame.draw.rect(win, DARK_GREY, hitboxT2)
+            else :
+                pygame.draw.rect(win, DARK_GREY, hitbox)
 
 
 #Boutons :
@@ -240,6 +248,38 @@ def pointed(obj):
     else :
         return False
 
+def checkPlacement(obs, case):
+    if obs.shape == "h":
+        if not(case.col == 8) and not(case.wall) and not(grid[case.lig][case.col+1].wall) :
+            return True
+    elif obs.shape == "v":
+        if not(case.lig == 10) and not(case.wall) and not(grid[case.lig+1][case.col].wall):
+            return True
+    elif obs.shape == "p" and not(case.wall):
+        return True
+    elif obs.shape == "t":
+        if not(case.col == 8 or case.col == 7 or case.lig == 10) and not(case.wall or grid[case.lig][case.col+1].wall or grid[case.lig][case.col+2].wall or grid[case.lig+1][case.col+1].wall) :
+            return True
+    else:
+        return False
+
+def placeObs(obs, case):
+    if obs.shape == "h":
+        case.wall = True
+        grid[case.lig][case.col+1].wall = True
+    elif obs.shape == "v":
+        case.wall = True
+        grid[case.lig+1][case.col].wall = True
+    elif obs.shape == "p":
+        case.wall = True
+    elif obs.shape == "t":
+        case.wall = True
+        grid[case.lig][case.col+1].wall = True
+        grid[case.lig][case.col+2].wall = True
+        grid[case.lig+1][case.col+1].wall = True
+    obs.placed = True
+
+
 def main():
     state = "map creation"
     run = True
@@ -249,6 +289,7 @@ def main():
     clic = False #Limiter à un clic
     info_sent = False
     selected = False
+    selectedObs = ""
 
     while run:
         for event in pygame.event.get():
@@ -300,29 +341,35 @@ def main():
 
         elif state == "map creation":
             #Test position souris
-            if not(selected):
-                mouse = ""
-                for obs in listObs:
-                    if pointed(obs):
-                        mouse = obs
-                for i in range(11):
-                    for j in range(9):
-                        if pointed(grid[i][j]):
-                            mouse = grid[i][j]
+            mouse = ""
+            for obs in listObs:
+                if pointed(obs):
+                    mouse = obs
+            for i in range(11):
+                for j in range(9):
+                    if pointed(grid[i][j]):
+                        mouse = grid[i][j]
                 
             if pygame.mouse.get_pressed()[0]:
-                if mouse != "" and not(clic) and not(selected):
-                    if mouse.type == "obstacle":
+                if mouse != "" and not(clic) and not(selected): #On est sur un objet et rien n'est sélectionné
+                    if mouse.type == "obstacle": #On sélectionne l'obstacle
                         clic = True
                         mouse.selected = True
                         selected = True
+                        selectedObs = mouse
                         print(mouse.id)
-                    elif mouse.type == "case":
+                    elif mouse.type == "case": #Osef
                         clic = True
                         print(mouse.id)
-                elif selected and not(clic):
+                elif selected and not(clic) and mouse != "": #On est sur un objet et un obstacle est sélectionné
                     clic = True
-                    mouse.selected = False
+                    if mouse.type == "case": #On clique sur une case
+                        if(checkPlacement(selectedObs, mouse)):
+                            placeObs(selectedObs, mouse)
+                            selectedObs.selected = False
+                            selected = False
+                elif not(clic) and selected: #Si on clique autrepart que sur une case
+                    selectedObs.selected = False
                     selected = False
             else :
                 clic = False
