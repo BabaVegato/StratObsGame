@@ -75,6 +75,7 @@ def redrawWindow(state):
         text = font.render("Connexion established !", True, (0, 128, 0))
         win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//2 - text.get_height() // 2))
         pygame.display.update()
+        pass_time(3)
     
     elif state =="map creation":
         win.fill((240, 240, 240))
