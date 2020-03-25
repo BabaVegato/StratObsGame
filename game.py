@@ -10,8 +10,8 @@ pygame.init()
 
 #Polices
 pygame.font.init()
-fontBtn = pygame.font.SysFont('Comic Sans MS', 30) #Police à changer
-fontTitle = pygame.font.SysFont('Comic Sans MS', 100)
+fontBtn = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30) #Police à changer
+fontTitle = pygame.font.Font("media\BlackOpsOne-Regular.ttf",100)
 font = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30)
 font2 = pygame.font.Font("media\BlackOpsOne-Regular.ttf",20)
 
