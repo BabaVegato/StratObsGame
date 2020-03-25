@@ -4,18 +4,19 @@ import server
 import threading
 import socket
 import time
-
+import ipaddress
 
 pygame.init()
 pygame.font.init()
 fontBtn = pygame.font.SysFont('Comic Sans MS', 30) #Police à changer
 fontTitle = pygame.font.SysFont('Comic Sans MS', 100)
 
-host = "192.168.1.68"
+host = socket.gethostbyname(socket.gethostname())
 port = 5555
 is_waiting_for_connexion = False
 
 state = ""
+
 
 
 #Dimensions écran
@@ -98,6 +99,7 @@ def adapt_to_server(cli, state):
     cli.stop_wait = True
     if cli.state_rcvd != None :
         state = cli.state_rcvd.get(1)
+        cli.state_rcvd = None
         return state
 
 def main():
@@ -143,17 +145,26 @@ def main():
                     print("Bouton client")
                     cli = client.Client()
                     cli.create_client(host, port)
-                    threading.Thread(target=cli.wait_for_object()).start()
+                    
                     info_sent = False
             else :
                 clic = False
                 
-        if state == "waiting for connexion" :
+        elif state == "waiting for connexion" :
             if serv.conn_addr != None :
                 state = "connexion established"
                 info_sent = False
-        
-        info = {1 : "connexion established"}
+
+        elif state == "connexion established":
+                state = "map creation"
+                info_sent = False
+
+        info = {1 : state}
+        if (serv == None) & (cli != None):
+            cli.stop_wait = False
+            wait = threading.Thread(target=cli.wait_for_object())
+            wait.start()
+            
 
         if (serv != None) & (cli == None) & (not info_sent):
             if serv.conn != None :
