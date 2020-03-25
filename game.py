@@ -7,14 +7,18 @@ import time
 import ipaddress
 
 pygame.init()
+pygame.font.init()
+fontBtn = pygame.font.SysFont('Comic Sans MS', 30) #Police à changer
+fontTitle = pygame.font.SysFont('Comic Sans MS', 100)
+font = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30)
 
 host = socket.gethostbyname(socket.gethostname())
 port = 5555
 is_waiting_for_connexion = False
 
 #Dimensions écran
-winWidth = 500
-winHeight = 500
+winWidth = 1300
+winHeight = 750
 d = {1: winWidth, 2: winHeight}
 
 win = pygame.display.set_mode((winWidth, winHeight))
@@ -25,23 +29,30 @@ clock = pygame.time.Clock()
 font = pygame.font.Font(r"C:\Users\Baptiste\Desktop\Eyes\StratObsGame\media\BlackOpsOne-Regular.ttf",30)
 
 class button(object):
-    def __init__(self, x, y, width, height, id):
+    def __init__(self, x, y, width, height, id, text):
         self.id = id
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.text = text
         self.xMax = self.x + self.width
         self.yMax = self.y + self.height
         self.hitbox = (self.x, self.y, self.width, self.height)
+        self.posText = (self.x, self.y+self.height/4) #à améliorer
     def draw(self, win):
         pygame.draw.rect(win, (0,0,0), self.hitbox)
+        textSurface = fontBtn.render(self.text, False, (255,255,255))
+        win.blit(textSurface, self.posText)
+
 
 def redrawWindow(state):
     if state == "entry" :
         win.fill((255, 255, 255))
-        btnTest1.draw(win)
-        btnTest2.draw(win)
+        title = fontTitle.render("StratObsGame", False, (0,0,0))
+        win.blit(title, (winWidth/5+25,50)) #not responsive
+        btnCreate.draw(win)
+        btnJoin.draw(win)
         pygame.display.update()
 
     elif state == "waiting for connexion" :
@@ -64,9 +75,11 @@ def redrawWindow(state):
         win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//4 - text.get_height() // 2))
         pygame.display.update()
 
-
-btnTest1 = button(int(winWidth/4), 200, 100, 100, "btnTest1")
-btnTest2 = button(int(3*winWidth/4), 200, 100, 100, "btnTest2")
+#Boutons :
+butHeight1 = 100
+butWidth1 = 300
+btnCreate = button(int(winWidth/2-butWidth1/2), int(winHeight/3), butWidth1, butHeight1, "btnCreate", "Créer une partie")
+btnJoin = button(int(winWidth/2-butWidth1/2), int(winHeight*2/3), butWidth1, butHeight1, "btnJoin", "Rejoindre une partie")
 
 def launch_server(state):
     serv = server.Server()
@@ -101,24 +114,24 @@ def main():
     
         #Test position souris
         xMouse, yMouse = pygame.mouse.get_pos() #Position de la souris
-        if xMouse > btnTest1.x and xMouse < btnTest1.xMax and yMouse > btnTest1.y and yMouse < btnTest1.yMax :
-            mouse = btnTest1.id
-        elif xMouse > btnTest2.x and xMouse < btnTest2.xMax and yMouse > btnTest2.y and yMouse < btnTest2.yMax :
-            mouse = btnTest2.id
+        if xMouse > btnCreate.x and xMouse < btnCreate.xMax and yMouse > btnCreate.y and yMouse < btnCreate.yMax :
+            mouse = btnCreate.id
+        elif xMouse > btnJoin.x and xMouse < btnJoin.xMax and yMouse > btnJoin.y and yMouse < btnJoin.yMax :
+            mouse = btnJoin.id
         else :
             mouse = ""
 
-        #Clic bouton
         if state == "entry" :
+            #Clic bouton
             if pygame.mouse.get_pressed()[0]: #Si clic gauche
-                if mouse == btnTest1.id and not(clic):
+                if mouse == btnCreate.id and not(clic):
                     clic = True
                     print("Bouton server")
                     serv = launch_server(state)
                     state = "waiting for connexion"
                     info_sent = False
 
-                if mouse == btnTest2.id and not(clic):
+                if mouse == btnJoin.id and not(clic):
                     clic = True
                     print("Bouton client")
                     cli = client.Client()
