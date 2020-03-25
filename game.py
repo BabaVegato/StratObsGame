@@ -7,14 +7,24 @@ import time
 import ipaddress
 
 pygame.init()
+
+#Polices
 pygame.font.init()
 fontBtn = pygame.font.SysFont('Comic Sans MS', 30) #Police à changer
 fontTitle = pygame.font.SysFont('Comic Sans MS', 100)
 font = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30)
+font2 = pygame.font.Font("media\BlackOpsOne-Regular.ttf",20)
 
 host = socket.gethostbyname(socket.gethostname())
 port = 5555
 is_waiting_for_connexion = False
+
+#Constantes
+GRIS = (169,169,169)
+BLANC = (255,255,255)
+NOIR = (0,0,0)
+DARK_GREY = (45,36,30)
+DARK_GREEN = (9,82,40)
 
 #Dimensions écran
 winWidth = 1300
@@ -41,17 +51,39 @@ pygame.display.set_caption("First Game")
 clock = pygame.time.Clock()
 
 class case(object):
-    def __init__(self, x, y, width, height, nbX, nbY):
-        self.x = x
-        self.y = y
+    def __init__(self, width, height, nbX, nbY):
+        self.x = 0
+        self.y = 0
         self.width = width
         self.height = height
         self.gap = 3
-        self.offsetX = (winWidth-(nbX*self.width+(nbX-1)*self.gap))//2 #Centrer la grille
+        self.mapWidth = nbX*self.width+(nbX-1)*self.gap
+        self.offsetX = (winWidth-self.mapWidth)//2 #Centrer la grille
         self.offsetY = (winHeight-(nbY*self.height+(nbY-1)*self.gap))//2
+        self.gridHitbox = (self.offsetX-self.gap, self.offsetY-self.gap, self.mapWidth+2*self.gap, nbY*self.height+(nbY-1)*self.gap+2*self.gap)
     def draw(self, win):
         hitbox = (self.x, self.y, self.width, self.height)
-        pygame.draw.rect(win, (0,0,0), hitbox)
+        pygame.draw.rect(win, GRIS, hitbox)
+
+class case2(object):
+    def __init__(self, i, j):
+        self.type = "case"
+        self.id = "case" + str(i) + str(j)
+        self.lignes = 11
+        self.colonnes = 9
+        self.width = 50
+        self.height = 50
+        self.gap = 3
+        self.mapWidth = self.colonnes*self.width+(self.colonnes-1)*self.gap
+        self.offsetX = (winWidth-self.mapWidth)//2
+        self.offsetY = (winHeight-(self.lignes*self.height+(self.lignes-1)*self.gap))//2
+        self.x = self.offsetX + j*(self.width + self.gap)
+        self.y = self.y = self.offsetY + i*(self.height + self.gap)
+        self.hitbox = (self.x, self.y, self.width, self.height)
+        self.xMax = self.x + self.width
+        self.yMax = self.y + self.height
+    def draw(self, win):
+        pygame.draw.rect(win, GRIS, self.hitbox)
 
 class button(object):
     def __init__(self, x, y, width, height, id, text):
@@ -70,6 +102,47 @@ class button(object):
         textSurface = fontBtn.render(self.text, False, (255,255,255))
         win.blit(textSurface, self.posText)
 
+class obstacle(object):
+    def __init__(self, x, y, shape, id, case):
+        self.type = "obstacle"
+        self.x = x
+        self.y = y
+        self.shape = shape
+        self.id = id
+        self.case = case
+        self.selected = False
+        if shape == "h":
+            self.width = self.case.width*2+self.case.gap
+            self.height = self.case.height
+        elif shape == "v":
+            self.width = self.case.width
+            self.height = self.case.height*2+self.case.gap
+        elif shape == "p":
+            self.width = self.case.width
+            self.height = self.case.height
+        elif shape == "t":
+            self.width = self.case.width*3+self.case.gap*2
+            self.height = 2*self.case.height+self.case.gap
+        self.xMax = x + self.width
+        self.yMax = y + self.height
+    def draw(self,win):
+        if not(self.selected):
+            x = self.x 
+            y = self.y
+        else :
+            mouseX, mouseY = pygame.mouse.get_pos()
+            x = mouseX - self.case.width//2
+            y = mouseY - self.case.height//2
+        hitbox = (x, y, self.width, self.height)
+        hitboxT1 = (x, y, self.case.width*3+self.case.gap*2, self.case.height+self.case.gap)
+        hitboxT2 = (x+self.case.width+self.case.gap, y+self.case.height+self.case.gap, self.case.width+self.case.gap, self.case.height+self.case.gap)
+        if self.shape == "t":
+            pygame.draw.rect(win, DARK_GREY, hitboxT1)
+            pygame.draw.rect(win, DARK_GREY, hitboxT2)
+        else :
+            pygame.draw.rect(win, DARK_GREY, hitbox)
+
+
 #Boutons :
 butHeight1 = 100
 butWidth1 = 300
@@ -77,19 +150,45 @@ btnCreate = button(int(winWidth/2-butWidth1/2), int(winHeight/3), butWidth1, but
 btnJoin = button(int(winWidth/2-butWidth1/2), int(winHeight*2/3), butWidth1, butHeight1, "btnJoin", "Rejoindre une partie")
 
 #Cases :
-case = case(0,0,50,50,9,11)
+case = case(50,50,9,11)
+for i in range(11):
+    for j in range(9):
+        grid[i][j] = case2(i,j)
+
+#Obstacles :
+obsV1 = obstacle((case.offsetX-3*case.height)//4,case.offsetY+case.height+case.gap,"v","obsV1",case)
+obsV2 = obstacle(2*(case.offsetX-3*case.height)//4+case.height,case.offsetY+case.height+case.gap,"v","obsV2",case)
+obsV3 = obstacle(3*(case.offsetX-3*case.height)//4+2*case.height,case.offsetY+case.height+case.gap,"v","obsV3",case)
+obsH1 = obstacle((case.offsetX-3*case.height)//4,case.offsetY+4*case.height+5*case.gap,"h","obsH1",case)
+obsH2 = obstacle((case.offsetX-3*case.height)//4,case.offsetY+6*case.height+7*case.gap,"h","obsH2",case)
+obsH3 = obstacle((case.offsetX-3*case.height)//4,case.offsetY+8*case.height+9*case.gap,"h","obsH3",case)
+obsP1 = obstacle((case.offsetX-3*case.height)//4+3*case.height,case.offsetY+4*case.height+5*case.gap,"p","obsP1",case)
+obsP2 = obstacle((case.offsetX-3*case.height)//4+5*case.height,case.offsetY+4*case.height+5*case.gap,"p","obsP2",case)
+obsP3 = obstacle((case.offsetX-3*case.height)//4+4*case.height,case.offsetY+6*case.height+7*case.gap,"p","obsP3",case)
+obsT = obstacle((case.offsetX-3*case.height)//4+3*case.height,case.offsetY+8*case.height+9*case.gap,"t","obsT",case)
+listObs = [obsV1, obsV2, obsV3, obsH1, obsH2, obsH3, obsP1, obsP2, obsP3, obsT]
 
 def pass_time(seconds):
     time.sleep(seconds) #Y'avait autre chose mais jsplus quoi et ça marche alors bon........
 
+def displayObstacles():
+    for obs in listObs:
+        obs.draw(win)
+
 def displayGrid():
+    pygame.draw.rect(win, DARK_GREY, case.gridHitbox)
     for i in range(11):
         for j in range(9):
-            case.x = case.offsetX + j*(case.width + case.gap)
-            case.y = case.offsetY + i*(case.height + case.gap)
-            if i==0 and j==0 :
-                print(case.x,case.y)
-            case.draw(win)
+            grid[i][j].draw(win)
+
+def displayText(state):
+    if state == "map creation":
+        text = font.render("Create the map", True, (0, 128, 0))
+        win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
+        text = font2.render("Obstacles", True, DARK_GREEN)
+        win.blit(text,(case.offsetX//2-text.get_width()//2, winHeight//14 - text.get_height() // 2))
+        text = font2.render("Units", True, DARK_GREEN)
+        win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
 
 def redrawWindow(state):
     if state == "entry" :
@@ -117,9 +216,9 @@ def redrawWindow(state):
     
     elif state =="map creation":
         win.fill((240, 240, 240))
-        text = font.render("Create the map", True, (0, 128, 0))
-        win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
+        displayText(state)
         displayGrid()
+        displayObstacles()
         pygame.display.update()
 
 def launch_server(state):
@@ -134,6 +233,13 @@ def adapt_to_server(cli, state):
         cli.state_rcvd = None
     return state
 
+def pointed(obj):
+    xMouse, yMouse = pygame.mouse.get_pos()
+    if xMouse < obj.xMax and xMouse > obj.x and yMouse < obj.yMax and yMouse > obj.y:
+        return True
+    else :
+        return False
+
 def main():
     state = "map creation"
     run = True
@@ -142,6 +248,7 @@ def main():
     mouse = "" #l'objet que pointe la souris
     clic = False #Limiter à un clic
     info_sent = False
+    selected = False
 
     while run:
         for event in pygame.event.get():
@@ -152,17 +259,15 @@ def main():
                     s.connect((host, port))
                 run = False
                 quit()
-    
-        #Test position souris
-        xMouse, yMouse = pygame.mouse.get_pos() #Position de la souris
-        if xMouse > btnCreate.x and xMouse < btnCreate.xMax and yMouse > btnCreate.y and yMouse < btnCreate.yMax :
-            mouse = btnCreate.id
-        elif xMouse > btnJoin.x and xMouse < btnJoin.xMax and yMouse > btnJoin.y and yMouse < btnJoin.yMax :
-            mouse = btnJoin.id
-        else :
-            mouse = ""
 
         if state == "entry" :
+            #Test position souris
+            if pointed(btnCreate) :
+                mouse = btnCreate.id
+            elif pointed(btnJoin) :
+                mouse = btnJoin.id
+            else :
+                mouse = ""
             #Clic bouton
             if pygame.mouse.get_pressed()[0]: #Si clic gauche
                 if mouse == btnCreate.id and not(clic):
@@ -194,8 +299,33 @@ def main():
                 info_sent = False
 
         elif state == "map creation":
-            pass
-
+            #Test position souris
+            if not(selected):
+                mouse = ""
+                for obs in listObs:
+                    if pointed(obs):
+                        mouse = obs
+                for i in range(11):
+                    for j in range(9):
+                        if pointed(grid[i][j]):
+                            mouse = grid[i][j]
+                
+            if pygame.mouse.get_pressed()[0]:
+                if mouse != "" and not(clic) and not(selected):
+                    if mouse.type == "obstacle":
+                        clic = True
+                        mouse.selected = True
+                        selected = True
+                        print(mouse.id)
+                    elif mouse.type == "case":
+                        clic = True
+                        print(mouse.id)
+                elif selected and not(clic):
+                    clic = True
+                    mouse.selected = False
+                    selected = False
+            else :
+                clic = False
 
         info = {1 : state}
         if (serv != None) & (cli == None) & (not info_sent):
