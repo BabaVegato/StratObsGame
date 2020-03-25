@@ -10,14 +10,11 @@ pygame.init()
 pygame.font.init()
 fontBtn = pygame.font.SysFont('Comic Sans MS', 30) #Police à changer
 fontTitle = pygame.font.SysFont('Comic Sans MS', 100)
+font = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30)
 
 host = socket.gethostbyname(socket.gethostname())
 port = 5555
 is_waiting_for_connexion = False
-
-state = ""
-
-
 
 #Dimensions écran
 winWidth = 1300
@@ -29,9 +26,7 @@ win = pygame.display.set_mode((winWidth, winHeight))
 pygame.display.set_caption("First Game")
 clock = pygame.time.Clock()
 
-def pass_time(seconds):
-    time.sleep(seconds)
-    return seconds
+font = pygame.font.Font(r"C:\Users\Baptiste\Desktop\Eyes\StratObsGame\media\BlackOpsOne-Regular.ttf",30)
 
 class button(object):
     def __init__(self, x, y, width, height, id, text):
@@ -62,7 +57,6 @@ def redrawWindow(state):
 
     elif state == "waiting for connexion" :
         win.fill((240, 240, 240))
-        font = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30)
         text_wait = font.render("Waiting for a connexion", True, (0, 128, 0))
         text_dot = font.render("...", True, (0, 128, 0))
         win.blit(text_wait,(winWidth//2 - text_wait.get_width() // 2, winHeight//2 - text_wait.get_height() // 2))
@@ -71,7 +65,6 @@ def redrawWindow(state):
 
     elif state == "connexion established":
         win.fill((240, 240, 240))
-        font = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30)
         text = font.render("Connexion established !", True, (0, 128, 0))
         win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//2 - text.get_height() // 2))
         pygame.display.update()
@@ -79,8 +72,7 @@ def redrawWindow(state):
     
     elif state =="map creation":
         win.fill((240, 240, 240))
-        font = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30)
-        text = font.render("Map creation", True, (0, 128, 0))
+        text = font.render("Create the map", True, (0, 128, 0))
         win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//4 - text.get_height() // 2))
         pygame.display.update()
 
@@ -97,11 +89,10 @@ def launch_server(state):
     return serv
 
 def adapt_to_server(cli, state):
-    cli.stop_wait = True
     if cli.state_rcvd != None :
         state = cli.state_rcvd.get(1)
         cli.state_rcvd = None
-        return state
+    return state
 
 def main():
     state = "entry"
@@ -146,7 +137,9 @@ def main():
                     print("Bouton client")
                     cli = client.Client()
                     cli.create_client(host, port)
-                    
+                    wait = threading.Thread(target=cli.wait_for_object)
+                    wait.daemon = True
+                    wait.start()
                     info_sent = False
             else :
                 clic = False
@@ -160,17 +153,16 @@ def main():
                 state = "map creation"
                 info_sent = False
 
-        info = {1 : state}
-        if (serv == None) & (cli != None):
-            cli.stop_wait = False
-            wait = threading.Thread(target=cli.wait_for_object())
-            wait.start()
-            
+        elif state == "map creation":
+            pass
 
+
+        info = {1 : state}
         if (serv != None) & (cli == None) & (not info_sent):
             if serv.conn != None :
                 serv.send_obj(serv.conn, info)
-                info_sent = True
+                
+        info_sent = True
 
         if (serv == None) & (cli != None):
             state = adapt_to_server(cli, state)
