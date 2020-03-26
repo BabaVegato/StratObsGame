@@ -5,11 +5,10 @@ import select
 
 class Server:
     def __init__(self):
-        self.host = "192.168.1.68"
-        self.port = 5555
         self.socket = None
         self.running = False
         self.conn = None
+        self.info_rcvd = None
 
     def create_server(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -18,7 +17,7 @@ class Server:
         self.running = True
         self.conn_addr = None
         self.conn = None
-        self.state_rcvd = None
+
         print("Listening on port 5555 ...")
 
     def wait_for_a_connection(self):
@@ -30,12 +29,15 @@ class Server:
         msg = pickle.dumps(obj)
         self.conn.send(msg)
         print("Sent an object : ", obj)
+        print("----------------------")
         
 
     def wait_for_object(self, conn):
         while True:
-            msg = self.conn.recv(4096)
-            d = pickle.loads(msg)
-            self.state_rcvd = d
-            print("Object received : ", d)
+            if(self.conn != None):
+                msg = self.conn.recv(4096)
+                d = pickle.loads(msg)
+                self.info_rcvd = d
+                print("Object received : ", d)
+                print("----------------------")
 

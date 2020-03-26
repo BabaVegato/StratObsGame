@@ -187,23 +187,23 @@ def displayGrid():
         for j in range(9):
             grid[i][j].draw(win)
 
-def displayText(state, turn):
+def displayText(state, turn, id_player):
     if state == "map creation":
-        if turn == 1 :
+        if turn == id_player :
             text_turn = font.render("Your turn to place", True, (0, 128, 0))
         else :
             text_turn = font.render("Waiting for your opponent", True, (0, 128, 0))
 
         text = font.render("Create the map", True, (0, 128, 0))
         win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
-        win.blit(text_turn,(winWidth//2 - text.get_width() // 2, winHeight//20 - 2*text.get_height() // 2))
+        win.blit(text_turn,(winWidth//2 - text.get_width() // 2, winHeight//20 + 2*text.get_height() // 2))
         text = font2.render("Obstacles", True, DARK_GREEN)
         win.blit(text,(case.offsetX//2-text.get_width()//2, winHeight//14 - text.get_height() // 2))
         text = font2.render("Units", True, DARK_GREEN)
         win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
 
 
-def redrawWindow(state, turn):
+def redrawWindow(state, turn, id_player):
     if state == "entry" :
         win.fill((255, 255, 255))
         title = fontTitle.render("StratObsGame", False, (0,0,0))
@@ -229,7 +229,7 @@ def redrawWindow(state, turn):
     
     elif state =="map creation":
         win.fill((240, 240, 240))
-        displayText(state , turn)
+        displayText(state , turn, id_player)
         displayGrid()
         displayObstacles()
         pygame.display.update()
@@ -240,13 +240,41 @@ def launch_server(state):
     threading.Thread(target=serv.wait_for_a_connection).start()
     return serv
 
-def adapt_to_server(cli, state, modif, adv_turn):
-    if cli.state_rcvd != None :
-        state = cli.state_rcvd.get(1)
-        modif = cli.state_rcvd.get(2)
-        adv_turn = cli.state_rcvd.get(3)
-        cli.state_rcvd = None
-    return state, modif, adv_turn
+def adapt_to_server(cli, state, modif, turn):
+    if cli.info_rcvd != None :
+        state = cli.info_rcvd.get(1)
+        modif = cli.info_rcvd.get(2)
+        turn = cli.info_rcvd.get(3)
+        cli.info_rcvd = None
+    return state, modif, turn
+
+def adapt_to_client(serv, state, modif, turn):
+    if serv.info_rcvd != None :
+        state = serv.info_rcvd.get(1)
+        modif = serv.info_rcvd.get(2)
+        turn = serv.info_rcvd.get(3)
+        serv.info_rcvd = None
+    return state, modif, turn
+
+def sending_and_receiving(serv, cli, info_sent, info, state, modif, turn):
+    #si c'est le serveur
+    if (serv != None) & (cli == None) & (not info_sent): #Si t'es le serveur et que t'envoies
+        if serv.conn != None :
+            serv.send_obj(serv.conn, info)
+
+    if (serv == None) & (cli != None): #Si t'es client et que tu reçois
+        state, modif, turn = adapt_to_server(cli, state, modif, turn)
+
+    #si c'est le client
+    if (serv == None) & (cli != None) & (not info_sent): #Si t'es le client et que t'envoies
+        cli.send_obj(info)
+
+    if (serv != None) & (cli == None) : #Si t'es serveur et que tu reçois
+        state, modif, turn = adapt_to_client(serv, state, modif, turn)
+
+    info_sent = True
+
+    return info_sent, state, modif, turn
 
 def pointed(obj):
     xMouse, yMouse = pygame.mouse.get_pos()
@@ -286,7 +314,6 @@ def placeObs(obs, case):
         grid[case.lig+1][case.col+1].wall = True
     obs.placed = True
 
-
 def main():
     state = "entry"
     run = True
@@ -298,8 +325,8 @@ def main():
     selected = False
     selectedObs = ""
     modif = None, None
-    turn = 1
-    adv_turn = 0
+    turn = 0
+    id_player = 0
 
     while run:
         for event in pygame.event.get():
@@ -326,7 +353,9 @@ def main():
                     print("Bouton server")
                     serv = launch_server(state)
                     state = "waiting for connexion"
-                    serv_wait = threading.Thread(target=serv.wait_for_object)
+                    serv_wait = threading.Thread(target=serv.wait_for_object, args=[serv.conn])
+                    serv_wait.daemon = True
+                    serv_wait.start()
                     info_sent = False
 
                 if mouse == btnJoin.id and not(clic):
@@ -337,7 +366,7 @@ def main():
                     cli_wait = threading.Thread(target=cli.wait_for_object)
                     cli_wait.daemon = True
                     cli_wait.start()
-                    turn = 0 # le client est le 2e à jouer (pour l'instant)
+                    id_player = 1 # le client est le 2e joueur
                     info_sent = False
             else :
                 clic = False
@@ -351,7 +380,7 @@ def main():
                 state = "map creation"
                 info_sent = False
 
-        elif (state == "map creation") & (turn == 1):
+        elif (state == "map creation") & (turn == id_player):
             #Test position souris
             mouse = ""
             for obs in listObs:
@@ -369,10 +398,8 @@ def main():
                         mouse.selected = True
                         selected = True
                         selectedObs = mouse
-                        print(mouse.id)
                     elif mouse.type == "case": #Osef
                         clic = True
-                        print(mouse.id)
                 elif selected and not(clic) and mouse != "": #On est sur un objet et un obstacle est sélectionné
                     clic = True
                     if mouse.type == "case": #On clique sur une case
@@ -381,6 +408,9 @@ def main():
                             selectedObs.selected = False
                             selected = False
                             modif = selectedObs.id, mouse.id
+                            turn+=1
+                            if turn == 2 : turn = 0
+                            
                             info_sent = False
 
                 elif not(clic) and selected: #Si on clique autrepart que sur une case
@@ -390,16 +420,11 @@ def main():
                 clic = False
 
         info = {1 : state, 2: modif, 3: turn}
-        if (serv != None) & (cli == None) & (not info_sent): #Si t'es le serveur et que t'envoies
-            if serv.conn != None :
-                serv.send_obj(serv.conn, info)
-                
-        info_sent = True
 
-        if (serv == None) & (cli != None): #Si t'es client et que tu reçois
-            state, modif, adv_turn = adapt_to_server(cli, state, modif, adv_turn)
+        info_sent, state, modif, turn = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn)
 
-        redrawWindow(state, turn)
+        redrawWindow(state, turn, id_player)
+
 
 main()
 pygame.quit()

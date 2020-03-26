@@ -3,8 +3,7 @@ import pickle
 
 class Client : 
     def __init__(self):
-        self.state_rcvd = None
-        self.server_socket = None
+        self.info_rcvd = None
         self.socket = None
 
     def create_client(self, host, port):
@@ -12,13 +11,15 @@ class Client :
         self.socket.connect((host, port))
 
     def wait_for_object(self):
-        #d = None
         while True:
             msg = self.socket.recv(4096)
             d = pickle.loads(msg)
-            self.state_rcvd = d
+            self.info_rcvd = d
             print("Object received : ", d)
+            print("----------------------")
 
     def send_obj(self, obj):
         msg = pickle.dumps(obj)
-        self.server_socket.send(msg)
+        self.socket.send(msg)
+        print("Sent an object : ", obj)
+        print("----------------------")
