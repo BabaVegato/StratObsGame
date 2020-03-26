@@ -310,7 +310,7 @@ def sending_and_receiving(serv, cli, info_sent, info, state, modif, turn):
         state, modif, turn = adapt_to_server(cli, state, modif, turn)
 
     #si c'est le client
-    if (serv == None) & (cli != None) & (not info_sent): #Si t'es le client et que t'envoies
+    if (serv == None) & (cli != None) & (not info_sent) & (state != "entry") & (state != "waiting for connexion") & (state != "connexion established"): #Si t'es le client et que t'envoies
         cli.send_obj(info)
 
     if (serv != None) & (cli == None) : #Si t'es serveur et que tu reçois
@@ -369,7 +369,7 @@ def placeUnit(unit, case):
 
 
 def main():
-    state = "units placement"
+    state = "entry"
     run = True
     serv = None
     cli = None
