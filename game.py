@@ -367,7 +367,6 @@ def placeUnit(unit, case):
     if unit.classe == "soldier":
         case.unit1 = "soldier"
 
-
 def main():
     state = "entry"
     run = True
@@ -392,7 +391,6 @@ def main():
                     s.connect((host, port))
                 run = False
                 quit()
-
         if state == "entry" :
             #Test position souris
             if pointed(btnCreate) :
