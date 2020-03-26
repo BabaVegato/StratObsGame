@@ -24,6 +24,7 @@ BLANC = (255,255,255)
 NOIR = (0,0,0)
 DARK_GREY = (45,36,30)
 DARK_GREEN = (9,82,40)
+RED = (190,0,0)
 
 #Dimensions écran
 winWidth = 1300
@@ -65,10 +66,11 @@ class case(object):
 
 class case2(object):
     def __init__(self, i, j):
+        self.unit1 = ""
         self.col = j
         self.lig = i
         self.type = "case"
-        self.id = "case" + str(i) + str(j)
+        self.id = (i,j)
         self.lignes = 11
         self.colonnes = 9
         self.width = 50
@@ -86,6 +88,9 @@ class case2(object):
     def draw(self, win):
         if not(self.wall):
             pygame.draw.rect(win, GRIS, self.hitbox)
+            if self.unit1 != "":
+                if self.unit1 == "soldier":
+                    pygame.draw.rect(win, RED, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
         else :
             pygame.draw.rect(win, DARK_GREY, self.hitbox)
 
@@ -148,6 +153,25 @@ class obstacle(object):
             else :
                 pygame.draw.rect(win, DARK_GREY, hitbox)
 
+class soldier(object):
+    def __init__(self, x, y):
+        self.selected = False #Drag'n drop
+        self.classe = "soldier"
+        self.type = "unit"
+        self.selected = False
+        self.x = x
+        self.y = y
+        self.width = 20
+        self.height = 20
+        self.xMax = x + self.width
+        self.yMax = y + self.height
+        self.hitbox = (self.x, self.y, self.width, self.height)
+    def draw(self,win):
+        pygame.draw.rect(win, RED, self.hitbox)
+        if self.selected :
+            x,y = pygame.mouse.get_pos()
+            hitbox = (x-self.width//2,y-self.height//2,self.width, self.height)
+            pygame.draw.rect(win, RED, hitbox)
 
 #Boutons :
 butHeight1 = 100
@@ -174,6 +198,10 @@ obsP3 = obstacle((case.offsetX-3*case.height)//4+4*case.height,case.offsetY+6*ca
 obsT = obstacle((case.offsetX-3*case.height)//4+3*case.height,case.offsetY+8*case.height+9*case.gap,"t","obsT",case)
 listObs = [obsV1, obsV2, obsV3, obsH1, obsH2, obsH3, obsP1, obsP2, obsP3, obsT]
 
+#Units :
+soldier = soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.height)
+listUnit = [soldier]
+
 def pass_time(seconds):
     time.sleep(seconds) #Y'avait autre chose mais jsplus quoi et ça marche alors bon........
 
@@ -187,7 +215,7 @@ def displayGrid():
         for j in range(9):
             grid[i][j].draw(win)
 
-def displayText(state, turn, id_player):
+def displayText(state, turn, id_player, nbUnit):
     if state == "map creation":
         if turn == id_player :
             text_turn = font.render("Your turn to place", True, (0, 128, 0))
@@ -199,11 +227,20 @@ def displayText(state, turn, id_player):
         win.blit(text_turn,(winWidth//2 - text.get_width() // 2, winHeight//20 + 2*text.get_height() // 2))
         text = font2.render("Obstacles", True, DARK_GREEN)
         win.blit(text,(case.offsetX//2-text.get_width()//2, winHeight//14 - text.get_height() // 2))
+    elif state == "units placement":
+        text = font.render("Place your units", True, (0, 128, 0))
+        win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
         text = font2.render("Units", True, DARK_GREEN)
         win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
+        text = font2.render("Remaining : "+str(nbUnit), True, NOIR)
+        win.blit(text,(case.offsetX+case.mapWidth+case.width, case.offsetY+case.height))
+        text = font2.render("Soldier :", True, NOIR)
+        win.blit(text,(case.offsetX+case.mapWidth+case.width, case.offsetY+2*case.height))
 
+def displayUnit():
+    soldier.draw(win)
 
-def redrawWindow(state, turn, id_player):
+def redrawWindow(state, turn, id_player, nbUnit):
     if state == "entry" :
         win.fill((255, 255, 255))
         title = fontTitle.render("StratObsGame", False, (0,0,0))
@@ -229,9 +266,16 @@ def redrawWindow(state, turn, id_player):
     
     elif state =="map creation":
         win.fill((240, 240, 240))
-        displayText(state , turn, id_player)
+        displayText(state , turn, id_player, nbUnit)
         displayGrid()
         displayObstacles()
+        pygame.display.update()
+    
+    elif state == "units placement":
+        win.fill((240,240,240))
+        displayText(state,turn, id_player, nbUnit)
+        displayGrid()
+        displayUnit()
         pygame.display.update()
 
 def launch_server(state):
@@ -283,18 +327,23 @@ def pointed(obj):
     else :
         return False
 
-def checkPlacement(obs, case):
-    if obs.shape == "h":
-        if not(case.col == 8) and not(case.wall) and not(grid[case.lig][case.col+1].wall) :
+def checkPlacement(obj, case):
+    if obj.type == "obstacle":
+        if obj.shape == "h":
+            if not(case.col == 8) and not(case.wall) and not(grid[case.lig][case.col+1].wall) :
+                return True
+        elif obj.shape == "v":
+            if not(case.lig == 10) and not(case.wall) and not(grid[case.lig+1][case.col].wall):
+                return True
+        elif obj.shape == "p" and not(case.wall):
             return True
-    elif obs.shape == "v":
-        if not(case.lig == 10) and not(case.wall) and not(grid[case.lig+1][case.col].wall):
-            return True
-    elif obs.shape == "p" and not(case.wall):
-        return True
-    elif obs.shape == "t":
-        if not(case.col == 8 or case.col == 7 or case.lig == 10) and not(case.wall or grid[case.lig][case.col+1].wall or grid[case.lig][case.col+2].wall or grid[case.lig+1][case.col+1].wall) :
-            return True
+        elif obj.shape == "t":
+            if not(case.col == 8 or case.col == 7 or case.lig == 10) and not(case.wall or grid[case.lig][case.col+1].wall or grid[case.lig][case.col+2].wall or grid[case.lig+1][case.col+1].wall) :
+                return True
+    elif obj.type == "unit":
+        if obj.classe == "soldier":
+            if not(case.wall) and case.unit1 == "":
+                return True
     else:
         return False
 
@@ -314,8 +363,13 @@ def placeObs(obs, case):
         grid[case.lig+1][case.col+1].wall = True
     obs.placed = True
 
+def placeUnit(unit, case):
+    if unit.classe == "soldier":
+        case.unit1 = "soldier"
+
+
 def main():
-    state = "entry"
+    state = "units placement"
     run = True
     serv = None
     cli = None
@@ -324,6 +378,7 @@ def main():
     info_sent = False
     selected = False
     selectedObs = ""
+    nbUnit = 8
     modif = None, None
     turn = 0
     id_player = 0
@@ -393,7 +448,7 @@ def main():
                 
             if pygame.mouse.get_pressed()[0]:
                 if mouse != "" and not(clic) and not(selected): #On est sur un objet et rien n'est sélectionné
-                    if mouse.type == "obstacle": #On sélectionne l'obstacle
+                    if mouse.type == "obstacle" and not(mouse.placed): #On sélectionne l'obstacle
                         clic = True
                         mouse.selected = True
                         selected = True
@@ -419,12 +474,44 @@ def main():
             else :
                 clic = False
 
+        elif state == "units placement":
+            mouse = ""
+            for unit in listUnit:
+                if pointed(unit):
+                    mouse = unit
+            for i in range(11):
+                for j in range(9):
+                    if pointed(grid[i][j]):
+                        mouse = grid[i][j]
+            
+            if pygame.mouse.get_pressed()[0]:
+                if mouse != "" and not(clic) and not(selected) and nbUnit > 0:
+                    if mouse.type == "unit": #On sélectionne l'unité
+                        clic = True
+                        mouse.selected = True
+                        selected = True
+                        selectedUnit = mouse
+                        selectedUnit.selected = True
+                        print(mouse.classe)
+                elif selected and not(clic) and mouse != "": #On est sur un objet et une unité est sélectionnée
+                    clic = True
+                    if mouse.type == "case": #On clique sur une case
+                        if(checkPlacement(selectedUnit, mouse)):
+                            placeUnit(selectedUnit, mouse)
+                            selectedUnit.selected = False
+                            selected = False
+                            nbUnit -= 1
+                elif not(clic) and selected: #Si on clique autrepart que sur une case
+                    selectedUnit.selected = False
+                    selected = False
+            else:
+                clic = False
+
         info = {1 : state, 2: modif, 3: turn}
 
         info_sent, state, modif, turn = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn)
 
-        redrawWindow(state, turn, id_player)
-
+        redrawWindow(state,turn, id_player, nbUnit)
 
 main()
 pygame.quit()
