@@ -367,6 +367,24 @@ def placeUnit(unit, case):
     if unit.classe == "soldier":
         case.unit1 = "soldier"
 
+def identify_obs(id):
+    for obs in listObs:
+        if obs.id == id:
+            return obs
+
+def identify_case(id):
+    for i in range(11):
+        for j in range(9):
+            if grid[i][j].id == id:
+                return grid[i][j]
+
+def apply_modif(modif):
+    obs = identify_obs(modif[0])
+    case = identify_case(modif[1])
+    if obs != None and case != None:
+        placeObs(obs, case)
+
+
 def main():
     state = "entry"
     run = True
@@ -508,7 +526,7 @@ def main():
         info = {1 : state, 2: modif, 3: turn}
 
         info_sent, state, modif, turn = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn)
-
+        apply_modif(modif)
         redrawWindow(state,turn, id_player, nbUnit)
 
 main()
