@@ -14,7 +14,7 @@ class Client :
     def wait_for_object(self):
         #d = None
         while True:
-            msg = self.socket.recv(2048)
+            msg = self.socket.recv(4096)
             d = pickle.loads(msg)
             self.state_rcvd = d
             print("Object received : ", d)
