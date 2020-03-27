@@ -206,19 +206,18 @@ def pass_time(seconds):
     time.sleep(seconds) #Y'avait autre chose mais jsplus quoi et ça marche alors bon........
     global is_time_passed
     is_time_passed = True
-    print("is_time_passed is modified to : ", is_time_passed)
 
-def displayObstacles():
+def display_obstacles():
     for obs in listObs:
         obs.draw(win)
 
-def displayGrid():
+def display_grid():
     pygame.draw.rect(win, DARK_GREY, case.gridHitbox)
     for i in range(11):
         for j in range(9):
             grid[i][j].draw(win)
 
-def displayText(state, turn, id_player, nbUnit):
+def display_text(state, turn, id_player, nb_unit):
     if state == "map creation":
         if turn == id_player :
             text_turn = font.render("Your turn to place", True, (0, 128, 0))
@@ -235,7 +234,7 @@ def displayText(state, turn, id_player, nbUnit):
         win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
         text = font2.render("Units", True, DARK_GREEN)
         win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
-        text = font2.render("Remaining : "+str(nbUnit), True, NOIR)
+        text = font2.render("Remaining : "+str(nb_unit), True, NOIR)
         win.blit(text,(case.offsetX+case.mapWidth+case.width, case.offsetY+case.height))
         text = font2.render("Soldier :", True, NOIR)
         win.blit(text,(case.offsetX+case.mapWidth+case.width, case.offsetY+2*case.height))
@@ -243,7 +242,7 @@ def displayText(state, turn, id_player, nbUnit):
 def displayUnit():
     soldier.draw(win)
 
-def redrawWindow(state, turn, id_player, nbUnit):
+def redrawWindow(state, turn, id_player, nb_unit):
     if state == "entry" :
         win.fill((255, 255, 255))
         title = fontTitle.render("StratObsGame", False, (0,0,0))
@@ -269,15 +268,15 @@ def redrawWindow(state, turn, id_player, nbUnit):
     
     elif state =="map creation":
         win.fill((240, 240, 240))
-        displayText(state , turn, id_player, nbUnit)
-        displayGrid()
-        displayObstacles()
+        display_text(state , turn, id_player, nb_unit)
+        display_grid()
+        display_obstacles()
         pygame.display.update()
     
     elif state == "units placement":
         win.fill((240,240,240))
-        displayText(state,turn, id_player, nbUnit)
-        displayGrid()
+        display_text(state,turn, id_player, nb_unit)
+        display_grid()
         displayUnit()
         pygame.display.update()
 
@@ -308,7 +307,7 @@ def checkPlacement(obj, case):
     else:
         return False
 
-def placeObs(obs, case):
+def place_obs(obs, case):
     if obs.shape == "h":
         case.wall = True
         grid[case.lig][case.col+1].wall = True
@@ -343,7 +342,7 @@ def apply_modif(modif):
     obs = identify_obs(modif[0])
     case = identify_case(modif[1])
     if obs != None and case != None:
-        placeObs(obs, case)
+        place_obs(obs, case)
 
 
 def main():
@@ -356,8 +355,8 @@ def main():
     clic = False #Limiter à un clic
     info_sent = False
     selected = False
-    selectedObs = ""
-    nbUnit = 8
+    selected_obs = ""
+    nb_unit = 8
     modif = None, None
     turn = 0
     id_player = 0
@@ -383,7 +382,6 @@ def main():
             if pygame.mouse.get_pressed()[0]: #Si clic gauche
                 if mouse == btnCreate.id and not(clic):
                     clic = True
-                    print("Bouton server")
                     serv = launch_server(state)
                     state = "waiting for connexion"
                     serv_wait = threading.Thread(target=serv.wait_for_object, args=[serv.conn])
@@ -393,7 +391,6 @@ def main():
 
                 if mouse == btnJoin.id and not(clic):
                     clic = True
-                    print("Bouton client")
                     cli = client.Client()
                     cli.create_client(host, port)
                     cli_wait = threading.Thread(target=cli.wait_for_object)
@@ -421,6 +418,13 @@ def main():
                 info_sent = False
 
         elif (state == "map creation") & (turn == id_player):
+            nb_obs_mis_total = 0
+            for obs in listObs :
+                if obs.placed :
+                    nb_obs_mis_total+=1
+            if nb_obs_mis_total == len(listObs) :
+                state = "units placement"
+
             #Test position souris
             mouse = ""
             for obs in listObs:
@@ -437,24 +441,25 @@ def main():
                         clic = True
                         mouse.selected = True
                         selected = True
-                        selectedObs = mouse
+                        selected_obs = mouse
                     elif mouse.type == "case": #Osef
                         clic = True
                 elif selected and not(clic) and mouse != "": #On est sur un objet et un obstacle est sélectionné
                     clic = True
                     if mouse.type == "case": #On clique sur une case
-                        if(checkPlacement(selectedObs, mouse)):
-                            placeObs(selectedObs, mouse)
-                            selectedObs.selected = False
+                        if(checkPlacement(selected_obs, mouse)):
+                            place_obs(selected_obs, mouse)
+                            selected_obs.selected = False
                             selected = False
-                            modif = selectedObs.id, mouse.id
+                            modif = selected_obs.id, mouse.id
+                            
                             turn+=1
                             if turn == 2 : turn = 0
                             
                             info_sent = False
 
                 elif not(clic) and selected: #Si on clique autrepart que sur une case
-                    selectedObs.selected = False
+                    selected_obs.selected = False
                     selected = False
             else :
                 clic = False
@@ -470,33 +475,34 @@ def main():
                         mouse = grid[i][j]
             
             if pygame.mouse.get_pressed()[0]:
-                if mouse != "" and not(clic) and not(selected) and nbUnit > 0:
+                if mouse != "" and not(clic) and not(selected) and nb_unit > 0:
                     if mouse.type == "unit": #On sélectionne l'unité
                         clic = True
                         mouse.selected = True
                         selected = True
-                        selectedUnit = mouse
-                        selectedUnit.selected = True
+                        selected_unit = mouse
+                        selected_unit.selected = True
                         print(mouse.classe)
                 elif selected and not(clic) and mouse != "": #On est sur un objet et une unité est sélectionnée
                     clic = True
                     if mouse.type == "case": #On clique sur une case
-                        if(checkPlacement(selectedUnit, mouse)):
-                            placeUnit(selectedUnit, mouse)
-                            selectedUnit.selected = False
+                        if(checkPlacement(selected_unit, mouse)):
+                            placeUnit(selected_unit, mouse)
+                            selected_unit.selected = False
                             selected = False
-                            nbUnit -= 1
+                            nb_unit -= 1
                 elif not(clic) and selected: #Si on clique autrepart que sur une case
-                    selectedUnit.selected = False
+                    selected_unit.selected = False
                     selected = False
             else:
                 clic = False
 
-        info = {1 : state, 2: modif, 3: turn}
+        info = {1 : state, 2: modif, 3: turn, 4: 0}
 
-        info_sent, state, modif, turn = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn)
+        info_sent, state, modif, turn, nothing = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, 0)
+
         apply_modif(modif)
-        redrawWindow(state,turn, id_player, nbUnit)
+        redrawWindow(state, turn, id_player, nb_unit)
 
 main()
 pygame.quit()
