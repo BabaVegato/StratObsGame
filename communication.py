@@ -12,38 +12,40 @@ def launch_server(state):
     threading.Thread(target=serv.wait_for_a_connection).start()
     return serv
 
-def adapt_to_server(cli, state, modif, turn):
+def adapt_to_server(cli, state, modif, turn, useful_stuff):
     if cli.info_rcvd != None :
         state = cli.info_rcvd.get(1)
         modif = cli.info_rcvd.get(2)
         turn = cli.info_rcvd.get(3)
+        useful_stuff = cli.info_rcvd.get(4)
         cli.info_rcvd = None
-    return state, modif, turn
+    return state, modif, turn, useful_stuff
 
-def adapt_to_client(serv, state, modif, turn):
+def adapt_to_client(serv, state, modif, turn, useful_stuff):
     if serv.info_rcvd != None :
         state = serv.info_rcvd.get(1)
         modif = serv.info_rcvd.get(2)
         turn = serv.info_rcvd.get(3)
+        useful_stuff = serv.info_rcvd.get(4)
         serv.info_rcvd = None
-    return state, modif, turn
+    return state, modif, turn, useful_stuff
 
-def sending_and_receiving(serv, cli, info_sent, info, state, modif, turn):
+def sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, useful_stuff):
     #si c'est le serveur
     if (serv != None) & (cli == None) & (not info_sent): #Si t'es le serveur et que t'envoies
         if serv.conn != None :
             serv.send_obj(serv.conn, info)
 
     if (serv == None) & (cli != None): #Si t'es client et que tu reçois
-        state, modif, turn = adapt_to_server(cli, state, modif, turn)
+        state, modif, turn, nothing = adapt_to_server(cli, state, modif, turn, useful_stuff)
 
     #si c'est le client
     if (serv == None) & (cli != None) & (not info_sent) & (state != "entry") & (state != "waiting for connexion") & (state != "connexion established"): #Si t'es le client et que t'envoies
         cli.send_obj(info)
 
     if (serv != None) & (cli == None) : #Si t'es serveur et que tu reçois
-        state, modif, turn = adapt_to_client(serv, state, modif, turn)
+        state, modif, turn, useful_stuff = adapt_to_client(serv, state, modif, turn, useful_stuff)
 
     info_sent = True
 
-    return info_sent, state, modif, turn
+    return info_sent, state, modif, turn, useful_stuff
