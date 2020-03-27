@@ -66,7 +66,11 @@ class case(object):
 
 class case2(object):
     def __init__(self, i, j):
+        self.highlighted = False #sélectionnée
+        #Caractéristique unité
         self.unit1 = ""
+        self.unit1_moved = False
+        ######################
         self.col = j
         self.lig = i
         self.type = "case"
@@ -86,13 +90,15 @@ class case2(object):
         self.yMax = self.y + self.height
         self.wall = False
     def draw(self, win):
-        if not(self.wall):
+        if self.wall :
+            pygame.draw.rect(win, DARK_GREY, self.hitbox)
+        else:
             pygame.draw.rect(win, GRIS, self.hitbox)
             if self.unit1 != "":
                 if self.unit1 == "soldier":
                     pygame.draw.rect(win, RED, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
-        else :
-            pygame.draw.rect(win, DARK_GREY, self.hitbox)
+                if self.highlighted:
+                    pygame.draw.rect(win, DARK_GREY, (self.x + (self.width-40)//2, self.y + (self.height-40)//2, 40, 40), 3)
 
 class button(object):
     def __init__(self, x, y, width, height, id, text):
@@ -105,11 +111,17 @@ class button(object):
         self.xMax = self.x + self.width
         self.yMax = self.y + self.height
         self.hitbox = (self.x, self.y, self.width, self.height)
-        self.posText = (self.x, int(self.y+self.height/4)) #à améliorer
+        self.posText = (self.x+5, int(self.y+self.height/4)+5) #à améliorer
     def draw(self, win):
-        pygame.draw.rect(win, (0,0,0), self.hitbox)
-        textSurface = fontBtn.render(self.text, False, (255,255,255))
-        win.blit(textSurface, self.posText)
+        text = fontBtn.render(self.text, False, (240,240,240))
+        if self.width != -1 and self.height != -1:
+            hitbox = self.hitbox
+        else: #La largeur et la hauteur s'adapte au texte
+            width = text.get_width()
+            height = text.get_height()
+            hitbox = (self.x, self.y, width+10, height+10)
+        pygame.draw.rect(win, DARK_GREY, hitbox)
+        win.blit(text, self.posText)
 
 class obstacle(object):
     def __init__(self, x, y, shape, id, case):
@@ -173,17 +185,21 @@ class soldier(object):
             hitbox = (x-self.width//2,y-self.height//2,self.width, self.height)
             pygame.draw.rect(win, RED, hitbox)
 
-#Boutons :
-butHeight1 = 100
-butWidth1 = 300
-btnCreate = button(int(winWidth/2-butWidth1/2), int(winHeight/3), butWidth1, butHeight1, "btnCreate", "Créer une partie")
-btnJoin = button(int(winWidth/2-butWidth1/2), int(winHeight*2/3), butWidth1, butHeight1, "btnJoin", "Rejoindre une partie")
-
 #Cases :
 case = case(50,50,9,11)
 for i in range(11):
     for j in range(9):
         grid[i][j] = case2(i,j)
+
+#Boutons :
+butHeight1 = 100
+butWidth1 = 300
+btnCreate = button(int(winWidth/2-butWidth1/2), int(winHeight/3), butWidth1, butHeight1, "btnCreate", "Créer une partie")
+btnJoin = button(int(winWidth/2-butWidth1/2), int(winHeight*2/3), butWidth1, butHeight1, "btnJoin", "Rejoindre une partie")
+btn_move = button(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + case.height,-1,-1,"btn_move", "MOVE")
+btn_obs = button(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 2*case.height,-1,-1,"btn_move","OBSERVE")
+btn_atk = button(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 3*case.height,-1,-1,"btn_atk","SHOOT")
+list_but = [btn_move, btn_obs, btn_atk]
 
 #Obstacles :
 obsV1 = obstacle((case.offsetX-3*case.height)//4,case.offsetY+case.height+case.gap,"v","obsV1",case)
@@ -218,6 +234,17 @@ def displayGrid():
         for j in range(9):
             grid[i][j].draw(win)
 
+def find_selected_unit():
+    for i in range(11):
+        for j in range(9):
+            if grid[i][j].highlighted:
+                return grid[i][j]
+    return None
+
+def display_but():
+    for but in list_but:
+        but.draw(win)
+
 def displayText(state, turn, id_player, nbUnit):
     if state == "map creation":
         if turn == id_player :
@@ -239,6 +266,18 @@ def displayText(state, turn, id_player, nbUnit):
         win.blit(text,(case.offsetX+case.mapWidth+case.width, case.offsetY+case.height))
         text = font2.render("Soldier :", True, NOIR)
         win.blit(text,(case.offsetX+case.mapWidth+case.width, case.offsetY+2*case.height))
+    elif state == "game":
+        if turn == id_player:
+            text = font.render("Your turn", True, (0, 128, 0))
+            win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
+            selected_unit = find_selected_unit()
+            if selected_unit != None:
+                text = font2.render("Actions", True, DARK_GREEN)
+                win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
+                display_but()
+        else :
+            text = font.render("Opponent's turn", True, (0, 128, 0))
+            win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
 
 def displayUnit():
     soldier.draw(win)
@@ -266,7 +305,6 @@ def redrawWindow(state, turn, id_player, nbUnit):
         win.blit(text,(int(winWidth//2 - text.get_width() // 2), int(winHeight//2 - text.get_height() // 2)))
         pygame.display.update()
         
-    
     elif state =="map creation":
         win.fill((240, 240, 240))
         displayText(state , turn, id_player, nbUnit)
@@ -279,6 +317,12 @@ def redrawWindow(state, turn, id_player, nbUnit):
         displayText(state,turn, id_player, nbUnit)
         displayGrid()
         displayUnit()
+        pygame.display.update()
+    
+    elif state == "game":
+        win.fill((240,240,240))
+        displayText(state,turn,id_player,nbUnit)
+        displayGrid()
         pygame.display.update()
 
 def pointed(obj):
@@ -347,7 +391,7 @@ def apply_modif(modif):
 
 
 def main():
-    state = "entry"
+    state = "game"
     thr_created_conn_esta = False
     run = True
     serv = None
@@ -361,6 +405,11 @@ def main():
     modif = None, None
     turn = 0
     id_player = 0
+    #highlighting_mode = False #Les cases sont surlignées au passage de la souris
+
+    ######### TEST ############
+    grid[0][0].unit1 = "soldier"
+    ###########################
 
     while run:
         for event in pygame.event.get():
@@ -490,6 +539,28 @@ def main():
                     selectedUnit.selected = False
                     selected = False
             else:
+                clic = False
+        
+        elif state == "game":
+            mouse = ""
+            for i in range(11):
+                for j in range(9):
+                    if pointed(grid[i][j]):
+                        mouse = grid[i][j]
+
+            if pygame.mouse.get_pressed()[0]:
+                if mouse != "" and not(clic) and not(selected):
+                    clic = True
+                    if mouse.type == "case": #Si on clique sur une case et qu'aucune unité n'est déjà sélectionnée
+                        if mouse.unit1 != "": #S'il y a une unité sur cette case, on la sélectionne
+                            mouse.highlighted = True
+                            selectedUnit = mouse
+                            selected = True
+                elif selected and not(clic): #Si on clique autre part et qu'une unité est sélectionnée, on déselectionne
+                    clic = True
+                    selected = False
+                    selectedUnit.highlighted = False
+            else :
                 clic = False
 
         info = {1 : state, 2: modif, 3: turn}
