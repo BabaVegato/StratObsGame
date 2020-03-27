@@ -226,7 +226,7 @@ def display_text(state, turn, id_player, nb_unit):
 
         text = font.render("Create the map", True, (0, 128, 0))
         win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
-        win.blit(text_turn,(winWidth//2 - text.get_width() // 2, winHeight//20 + 2*text.get_height() // 2))
+        win.blit(text_turn,(winWidth//2 - text.get_width() // 2, int(winHeight//20 + 0.8*text.get_height() // 2)))
         text = font2.render("Obstacles", True, DARK_GREEN)
         win.blit(text,(case.offsetX//2-text.get_width()//2, winHeight//14 - text.get_height() // 2))
     elif state == "units placement":
@@ -424,6 +424,7 @@ def main():
                     nb_obs_mis_total+=1
             if nb_obs_mis_total == len(listObs) :
                 state = "units placement"
+                info_sent = False
 
             #Test position souris
             mouse = ""
