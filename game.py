@@ -49,6 +49,8 @@ win = pygame.display.set_mode((winWidth, winHeight))
 pygame.display.set_caption("First Game")
 clock = pygame.time.Clock()
 
+is_time_passed = False
+
 class case(object):
     def __init__(self, width, height, nbX, nbY):
         self.x = 0
@@ -204,6 +206,9 @@ listUnit = [soldier]
 
 def pass_time(seconds):
     time.sleep(seconds) #Y'avait autre chose mais jsplus quoi et ça marche alors bon........
+    global is_time_passed
+    is_time_passed = True
+    print("is_time_passed is modified to : ", is_time_passed)
 
 def displayObstacles():
     for obs in listObs:
@@ -262,7 +267,7 @@ def redrawWindow(state, turn, id_player, nbUnit):
         text = font.render("Connexion established !", True, (0, 128, 0))
         win.blit(text,(int(winWidth//2 - text.get_width() // 2), int(winHeight//2 - text.get_height() // 2)))
         pygame.display.update()
-        pass_time(3)
+        
     
     elif state =="map creation":
         win.fill((240, 240, 240))
@@ -387,6 +392,7 @@ def apply_modif(modif):
 
 def main():
     state = "entry"
+    thr_created_conn_esta = False
     run = True
     serv = None
     cli = None
@@ -448,6 +454,13 @@ def main():
                 info_sent = False
 
         elif state == "connexion established":
+            if not thr_created_conn_esta :
+                thread_pass_time = threading.Thread(target=pass_time, args=[3])
+                thread_pass_time.daemon = True
+                thread_pass_time.start()
+                thr_created_conn_esta = True
+            global is_time_passed
+            if is_time_passed :
                 state = "map creation"
                 info_sent = False
 
