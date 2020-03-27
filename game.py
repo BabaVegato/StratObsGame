@@ -10,7 +10,7 @@ pygame.init()
 
 #Polices
 pygame.font.init()
-fontBtn = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30) #Police à changer
+fontBtn = pygame.font.Font("media\BlackOpsOne-Regular.ttf",25) #Police à changer
 fontTitle = pygame.font.Font("media\BlackOpsOne-Regular.ttf",100)
 font = pygame.font.Font("media\BlackOpsOne-Regular.ttf",30)
 font2 = pygame.font.Font("media\BlackOpsOne-Regular.ttf",20)
@@ -105,7 +105,7 @@ class button(object):
         self.xMax = self.x + self.width
         self.yMax = self.y + self.height
         self.hitbox = (self.x, self.y, self.width, self.height)
-        self.posText = (self.x, self.y+self.height/4) #à améliorer
+        self.posText = (self.x, int(self.y+self.height/4)) #à améliorer
     def draw(self, win):
         pygame.draw.rect(win, (0,0,0), self.hitbox)
         textSurface = fontBtn.render(self.text, False, (255,255,255))
@@ -244,7 +244,7 @@ def redrawWindow(state, turn, id_player, nbUnit):
     if state == "entry" :
         win.fill((255, 255, 255))
         title = fontTitle.render("StratObsGame", False, (0,0,0))
-        win.blit(title, (winWidth/5+25,50)) #not responsive
+        win.blit(title, (int(winWidth/5+25),50)) #not responsive
         btnCreate.draw(win)
         btnJoin.draw(win)
         pygame.display.update()
@@ -253,14 +253,14 @@ def redrawWindow(state, turn, id_player, nbUnit):
         win.fill((240, 240, 240))
         text_wait = font.render("Waiting for a connexion", True, (0, 128, 0))
         text_dot = font.render("...", True, (0, 128, 0))
-        win.blit(text_wait,(winWidth//2 - text_wait.get_width() // 2, winHeight//2 - text_wait.get_height() // 2))
-        win.blit(text_dot,(winWidth//2 - text_dot.get_width() // 2, winHeight//2 - text_dot.get_height() // 2 + text_wait.get_height()))
+        win.blit(text_wait,(int(winWidth//2 - text_wait.get_width() // 2), int(winHeight//2 - text_wait.get_height() // 2)))
+        win.blit(text_dot,(int(winWidth//2 - text_dot.get_width() // 2), int(winHeight//2 - text_dot.get_height() // 2 + text_wait.get_height())))
         pygame.display.update()
 
     elif state == "connexion established":
         win.fill((240, 240, 240))
         text = font.render("Connexion established !", True, (0, 128, 0))
-        win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//2 - text.get_height() // 2))
+        win.blit(text,(int(winWidth//2 - text.get_width() // 2), int(winHeight//2 - text.get_height() // 2)))
         pygame.display.update()
         pass_time(3)
     
