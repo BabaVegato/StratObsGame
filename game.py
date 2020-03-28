@@ -50,6 +50,7 @@ pygame.display.set_caption("First Game")
 clock = pygame.time.Clock()
 
 is_time_passed = False
+sound_played = False
 
 class case(object):
     def __init__(self, width, height, nbX, nbY):
@@ -490,6 +491,13 @@ def observe(unit): #évalue chaque direction à partir de la case
             stop = True 
     case.unit_observing = True
     case.unit1_moved = True
+def play_sound(sound):
+    global sound_played
+    if sound_played == False :
+        pygame.mixer.music.load(f'media\{sound}.wav')
+        pygame.mixer.music.play(0)
+        sound_played = True
+
 
 def main():
     state = "game"
@@ -508,6 +516,7 @@ def main():
     other_ready_to_play = False
     turn = 0
     id_player = 0
+    sound_played = False
     #highlighting_mode = False #Les cases sont surlignées au passage de la souris
     moving_unit = False
 
@@ -556,11 +565,15 @@ def main():
                 clic = False
                 
         elif state == "waiting for connexion" :
+            play_sound('modem')
+
             if serv.conn_addr != None :
+                pygame.mixer.music.stop()
                 state = "connexion established"
                 info_sent = False
 
         elif state == "connexion established":
+            play_sound('log')
             if not thr_created_conn_esta :
                 thread_pass_time = threading.Thread(target=pass_time, args=[3])
                 thread_pass_time.daemon = True
