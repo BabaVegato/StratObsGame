@@ -244,7 +244,7 @@ def display_but():
     for but in list_but:
         but.draw(win)
 
-def displayText(state, turn, id_player, nbUnit):
+def display_text(state, turn, id_player, nb_unit):
     if state == "map creation":
         if turn == id_player :
             text_turn = font.render("Your turn to place", True, (0, 128, 0))
@@ -278,10 +278,10 @@ def displayText(state, turn, id_player, nbUnit):
             text = font.render("Opponent's turn", True, (0, 128, 0))
             win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
 
-def displayUnit():
+def display_unit():
     soldier.draw(win)
 
-def redrawWindow(state, turn, id_player, nb_unit):
+def redraw_window(state, turn, id_player, nb_unit):
     if state == "entry" :
         win.fill((255, 255, 255))
         title = fontTitle.render("StratObsGame", False, (0,0,0))
@@ -315,13 +315,13 @@ def redrawWindow(state, turn, id_player, nb_unit):
         win.fill((240,240,240))
         display_text(state,turn, id_player, nb_unit)
         display_grid()
-        displayUnit()
+        display_unit()
         pygame.display.update()
     
     elif state == "game":
         win.fill((240,240,240))
-        displayText(state,turn,id_player,nbUnit)
-        displayGrid()
+        display_text(state,turn,id_player,nb_unit)
+        display_grid()
         pygame.display.update()
 
 def pointed(obj):
@@ -331,7 +331,7 @@ def pointed(obj):
     else :
         return False
 
-def checkPlacement(obj, case):
+def check_placement(obj, case):
     if obj.type == "obstacle":
         if obj.shape == "h":
             if not(case.col == 8) and not(case.wall) and not(grid[case.lig][case.col+1].wall) :
@@ -390,7 +390,7 @@ def apply_modif(modif):
 
 
 def main():
-    state = "game"
+    state = "entry"
     thr_created_conn_esta = False
     run = True
     serv = None
@@ -402,6 +402,8 @@ def main():
     selected_obs = ""
     nb_unit = 8
     modif = None, None
+    ready_to_play = False
+    other_ready_to_play = False
     turn = 0
     id_player = 0
     #highlighting_mode = False #Les cases sont surlignées au passage de la souris
@@ -497,7 +499,7 @@ def main():
                 elif selected and not(clic) and mouse != "": #On est sur un objet et un obstacle est sélectionné
                     clic = True
                     if mouse.type == "case": #On clique sur une case
-                        if(checkPlacement(selected_obs, mouse)):
+                        if(check_placement(selected_obs, mouse)):
                             place_obs(selected_obs, mouse)
                             selected_obs.selected = False
                             selected = False
@@ -515,6 +517,9 @@ def main():
                 clic = False
 
         elif state == "units placement":
+            if(other_ready_to_play == True & ready_to_play == True) & (serv != None):
+                state = "game"
+                info_sent = False
             mouse = ""
             for unit in listUnit:
                 if pointed(unit):
@@ -536,14 +541,18 @@ def main():
                 elif selected and not(clic) and mouse != "": #On est sur un objet et une unité est sélectionnée
                     clic = True
                     if mouse.type == "case": #On clique sur une case
-                        if(checkPlacement(selected_unit, mouse)):
+                        if(check_placement(selected_unit, mouse)):
                             placeUnit(selected_unit, mouse)
                             selected_unit.selected = False
                             selected = False
                             nb_unit -= 1
+                            if nb_unit == 0:
+                                ready_to_play = True
+                                info_sent = False
                 elif not(clic) and selected: #Si on clique autrepart que sur une case
                     selected_unit.selected = False
                     selected = False
+
             else:
                 clic = False
         
@@ -560,21 +569,21 @@ def main():
                     if mouse.type == "case": #Si on clique sur une case et qu'aucune unité n'est déjà sélectionnée
                         if mouse.unit1 != "": #S'il y a une unité sur cette case, on la sélectionne
                             mouse.highlighted = True
-                            selectedUnit = mouse
+                            selected_unit = mouse
                             selected = True
                 elif selected and not(clic): #Si on clique autre part et qu'une unité est sélectionnée, on déselectionne
                     clic = True
                     selected = False
-                    selectedUnit.highlighted = False
+                    selected_unit.highlighted = False
             else :
                 clic = False
 
-        info = {1 : state, 2: modif, 3: turn, 4: 0}
+        info = {1 : state, 2: modif, 3: turn, 4: ready_to_play}
 
-        info_sent, state, modif, turn, nothing = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, 0)
-
+        info_sent, state, modif, turn, other_ready_to_play = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play)
+        
         apply_modif(modif)
-        redrawWindow(state, turn, id_player, nb_unit)
+        redraw_window(state, turn, id_player, nb_unit)
 
 main()
 pygame.quit()
