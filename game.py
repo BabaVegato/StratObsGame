@@ -398,7 +398,7 @@ def play_sound(sound):
 
 
 def main():
-    state = "entry"
+    state = "game"
     thr_created_conn_esta = False
     run = True
     serv = None
