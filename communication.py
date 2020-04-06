@@ -32,19 +32,22 @@ def adapt_to_client(serv, state, modif, turn, useful_stuff):
 
 def sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, useful_stuff):
     #si c'est le serveur
+    if (serv != None) & (state == "units placement"):
+        useful_stuff = False
+
     if (serv != None) & (cli == None) & (not info_sent): #Si t'es le serveur et que t'envoies
         if serv.conn != None :
             serv.send_obj(serv.conn, info)
 
-    if (serv == None) & (cli != None): #Si t'es client et que tu reçois
-        state, modif, turn, nothing = adapt_to_server(cli, state, modif, turn, useful_stuff)
+    if (serv != None) & (cli == None) : #Si t'es serveur et que tu reçois
+        state, modif, turn, useful_stuff = adapt_to_client(serv, state, modif, turn, useful_stuff)
 
     #si c'est le client
     if (serv == None) & (cli != None) & (not info_sent) & (state != "entry") & (state != "waiting for connexion") & (state != "connexion established"): #Si t'es le client et que t'envoies
         cli.send_obj(info)
-
-    if (serv != None) & (cli == None) : #Si t'es serveur et que tu reçois
-        state, modif, turn, useful_stuff = adapt_to_client(serv, state, modif, turn, useful_stuff)
+    
+    if (serv == None) & (cli != None): #Si t'es client et que tu reçois
+        state, modif, turn, useful_stuff = adapt_to_server(cli, state, modif, turn, useful_stuff)
 
     info_sent = True
 

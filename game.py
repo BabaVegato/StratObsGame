@@ -618,7 +618,7 @@ def disable_attacking(unit):
     return False
 
 def main():
-    state = "game"
+    state = "entry"
     thr_created_conn_esta = False
     run = True
     serv = None
@@ -632,6 +632,7 @@ def main():
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
+    other_really_ready = False
     turn = 0
     id_player = 0
     sound_played = False
@@ -754,8 +755,9 @@ def main():
             else :
                 clic = False
 
-        elif state == "units placement":
-            if(other_ready_to_play == True & ready_to_play == True) & (serv != None):
+        elif state == "units placement":   
+            if ((other_really_ready == True) & (ready_to_play == True) & (serv != None)):
+                print("go to game")
                 state = "game"
                 info_sent = False
             mouse = ""
@@ -786,7 +788,8 @@ def main():
                             nb_unit -= 1
                             if nb_unit == 0:
                                 ready_to_play = True
-                                info_sent = False
+                                if(serv == None):
+                                    info_sent = False
                 elif not(clic) and selected: #Si on clique autrepart que sur une case
                     selected_unit.selected = False
                     selected = False
@@ -870,7 +873,8 @@ def main():
         info = {1 : state, 2: modif, 3: turn, 4: ready_to_play}
 
         info_sent, state, modif, turn, other_ready_to_play = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play)
-        
+        if other_ready_to_play == True:
+            other_really_ready = True
         apply_modif(modif)
         redraw_window(state, turn, id_player, nb_unit)
 
