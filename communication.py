@@ -14,19 +14,19 @@ def launch_server(state):
 
 def adapt_to_server(cli, state, modif, turn, useful_stuff):
     if cli.info_rcvd != None :
-        state = cli.info_rcvd.get(1)
-        modif = cli.info_rcvd.get(2)
-        turn = cli.info_rcvd.get(3)
-        useful_stuff = cli.info_rcvd.get(4)
+        state = cli.info_rcvd.get("state")
+        modif = cli.info_rcvd.get("modif")
+        turn = cli.info_rcvd.get("turn")
+        useful_stuff = cli.info_rcvd.get("useful stuff")
         cli.info_rcvd = None
     return state, modif, turn, useful_stuff
 
 def adapt_to_client(serv, state, modif, turn, useful_stuff):
     if serv.info_rcvd != None :
-        state = serv.info_rcvd.get(1)
-        modif = serv.info_rcvd.get(2)
-        turn = serv.info_rcvd.get(3)
-        useful_stuff = serv.info_rcvd.get(4)
+        state = serv.info_rcvd.get("state")
+        modif = serv.info_rcvd.get("modif")
+        turn = serv.info_rcvd.get("turn")
+        useful_stuff = serv.info_rcvd.get("useful stuff")
         serv.info_rcvd = None
     return state, modif, turn, useful_stuff
 

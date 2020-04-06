@@ -491,6 +491,9 @@ def observe(unit): #évalue chaque direction à partir de la case
             stop = True 
     case.unit_observing = True
     case.unit1_moved = True
+
+    return unit.id
+
 def play_sound(sound):
     global sound_played
     if sound_played == False :
@@ -515,9 +518,11 @@ def main():
     ready_to_play = False
     other_ready_to_play = False
     other_really_ready = False
+    idUnitObs = (0, 0)
     turn = 0
     id_player = 0
     sound_played = False
+    casesObserv = []
     #highlighting_mode = False #Les cases sont surlignées au passage de la souris
     moving_unit = False
 
@@ -705,7 +710,11 @@ def main():
                             if moving_unit:
                                 moving_unit = disable_moving(selected_unit)
                             if not(selected_unit.unit_observing) and not(selected_unit.unit1_moved):
-                                observe(selected_unit)
+                                idUnitObs = observe(selected_unit)
+                                for rangee in grid :
+                                    for case in rangee:
+                                        casesObserv.append(case)
+                                info_sent = False
                             print("btn_obs")
                         elif mouse.id == "btn_atk":
                             if moving_unit:
@@ -733,11 +742,21 @@ def main():
             else :
                 clic = False
 
-        info = {1 : state, 2: modif, 3: turn, 4: ready_to_play}
+        
 
-        info_sent, state, modif, turn, other_ready_to_play = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play)
+        if(state == "game"):
+            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff": ready_to_play}
+            info_sent, state, idUnitObs, turn, casesObserv = sending_and_receiving(serv, cli, info_sent, info, state, idUnitObs, turn, casesObserv)
+
+        else:
+            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff": ready_to_play}
+            info_sent, state, modif, turn, other_ready_to_play = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play)
+
+
+
         if other_ready_to_play == True:
             other_really_ready = True
+
         apply_modif(modif)
         redraw_window(state, turn, id_player, nb_unit)
 
