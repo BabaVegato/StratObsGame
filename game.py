@@ -5,6 +5,7 @@ import threading
 import socket
 import time
 import ipaddress
+import random
 from communication import *
 
 pygame.init()
@@ -25,6 +26,7 @@ DARK_GREEN = (9,82,40)
 RED = (190,0,0)
 GREEN = (107,142,35)
 GREY = (105,105,105)
+LIGHT_RED = (255, 102, 102)
 
 #Dimensions écran
 winWidth = 1300
@@ -76,18 +78,27 @@ class case2(object):
         self.moving = False
         self.remaining_moves = 2
         self.unit_observing = False
+        self.attacked = False
+        self.target = False
         ######################
+        #Etat case
         self.observed = False
         self.reachable = False
+        self.wall = False
+        self.unit2 = ""
+        self.highlighted_shoot = False
+        #####################
         self.col = j
         self.lig = i
-        self.type = "case"
         self.id = (i,j)
+        self.type = "case"
+        #Constantes
         self.lignes = 11
         self.colonnes = 9
         self.width = 50
         self.height = 50
         self.gap = 3
+        ###########
         self.mapWidth = self.colonnes*self.width+(self.colonnes-1)*self.gap
         self.offsetX = (winWidth-self.mapWidth)//2
         self.offsetY = (winHeight-(self.lignes*self.height+(self.lignes-1)*self.gap))//2
@@ -96,7 +107,6 @@ class case2(object):
         self.hitbox = (self.x, self.y, self.width, self.height)
         self.xMax = self.x + self.width
         self.yMax = self.y + self.height
-        self.wall = False
     def draw(self, win):
         if self.wall :
             pygame.draw.rect(win, DARK_GREY, self.hitbox)
@@ -109,10 +119,20 @@ class case2(object):
                 color_case = GREY
             pygame.draw.rect(win, color_case, self.hitbox)
             if self.unit1 != "":
-                if self.unit1 == "soldier":
+                if self.unit1 == "soldier" and (not(self.unit1_moved) or not(self.attacked) and self.target): #L'unité a encore des actions a effectuer
                     pygame.draw.rect(win, RED, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+                elif self.unit1 == "soldier" and self.unit1_moved:
+                    pygame.draw.rect(win, LIGHT_RED, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
                 if self.highlighted:
-                    pygame.draw.rect(win, DARK_GREY, (self.x + (self.width-40)//2, self.y + (self.height-40)//2, 40, 40), 3)
+                    #pygame.draw.rect(win, DARK_GREY, (self.x + (self.width-40)//2, self.y + (self.height-40)//2, 40, 40), 3)
+                    pass
+                if self.unit2 != "" and self.observed:
+                    pygame.draw.rect(win, DARK_GREEN, (self.x+5+(self.width-20)//2,self.y+5+(self.width-20)//2,10,10))
+            elif self.unit2 != "" and self.observed:
+                if self.unit2 == "soldier":
+                    pygame.draw.rect(win, DARK_GREEN, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+            if self.highlighted_shoot:
+                pygame.draw.rect(win, RED, (self.x + (self.width-40)//2, self.y + (self.height-40)//2, 40, 40), 3)
 
 class button(object):
     def __init__(self, x, y, width, height, id, text):
@@ -135,6 +155,7 @@ class button2(object):
     def __init__(self, x, y, id, text):
         paddingX = 6
         paddingY = 0
+        self.grayed = False
         self.type = "button"
         self.x = x
         self.y = y
@@ -149,7 +170,12 @@ class button2(object):
         self.xMax = self.x + self.width
         self.yMax = self.y + self.height
     def draw(self, win):
-        pygame.draw.rect(win,DARK_GREY,self.hitbox)
+        if self.grayed :
+            pygame.draw.rect(win,GRIS,self.hitbox)
+        elif self.id == "btn_atk":
+            pygame.draw.rect(win,RED,self.hitbox)
+        else:
+            pygame.draw.rect(win,DARK_GREY,self.hitbox)
         win.blit(self.text, self.pos_text)
 
 class obstacle(object):
@@ -194,7 +220,7 @@ class obstacle(object):
             else :
                 pygame.draw.rect(win, DARK_GREY, hitbox)
 
-class soldier(object):
+class soldier(object): #Permet de gérer le placement des unités
     def __init__(self, x, y):
         self.selected = False #Drag'n drop
         self.classe = "soldier"
@@ -273,6 +299,39 @@ def display_but():
     for but in list_but:
         but.draw(win)
 
+def shoot_range(unit): #Retourne la liste des unités attaquables par une unité
+    shoot_list = []
+    for i in range(1,3): #Vertical
+        if unit.lig+i < 11:
+            if grid[unit.lig + i][unit.col].unit2 != "" and grid[unit.lig + i][unit.col].observed:
+                shoot_list.append(grid[unit.lig+i][unit.col])
+        if unit.lig-i >= 0:
+            if grid[unit.lig - i][unit.col].unit2 != "" and grid[unit.lig - i][unit.col].observed:
+                shoot_list.append(grid[unit.lig-i][unit.col])
+    for j in range(1,3): #Horizontal
+        if unit.col + j < 9:
+            if grid[unit.lig][unit.col + j].unit2 != "" and grid[unit.lig][unit.col + j].observed:
+                shoot_list.append(grid[unit.lig][unit.col+j])
+        if unit.col - j >= 0:
+            if grid[unit.lig][unit.col - j].unit2 != "" and grid[unit.lig][unit.col - j].observed:
+                shoot_list.append(grid[unit.lig][unit.col-j])
+    if unit.unit2 != "" and unit.observed:
+        shoot_list.append(unit)
+    return shoot_list
+
+def state_but(unit): #Permet de griser les boutons
+    btn_move.grayed = False
+    btn_obs.grayed = False
+    btn_atk.grayed = True
+    if unit.unit1_moved:
+        btn_move.grayed = True
+        btn_obs.grayed = True
+    elif unit.remaining_moves < 2:
+        btn_obs.grayed = True
+    shoot_list = shoot_range(unit)
+    if shoot_list != [] and not(unit.attacked):
+        btn_atk.grayed = False
+
 def display_text(state, turn, id_player, nb_unit):
     if state == "map creation":
         if turn == id_player :
@@ -302,6 +361,7 @@ def display_text(state, turn, id_player, nb_unit):
             if selected_unit != None:
                 text = font2.render("Actions", True, DARK_GREEN)
                 win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
+                state_but(selected_unit)
                 display_but()
         else :
             text = font.render("Opponent's turn", True, (0, 128, 0))
@@ -439,6 +499,16 @@ def check_movement(case):
     else:
         return False
 
+def check_target(): #check si les unités ont une cible potentielle
+    list_range = []
+    for i in range(11):
+        for j in range(9):
+            if grid[i][j].unit1 != "":
+                if shoot_range(grid[i][j]) != []:
+                    grid[i][j].target = True
+                else : 
+                    grid[i][j].target = False
+
 def move_unit(unit,case):
     case.unit1 = unit.unit1
     unit.unit1 = ""
@@ -453,6 +523,7 @@ def move_unit(unit,case):
     unit.highlighted = False
     case.highlighted = True
     reset_reach()
+    check_target()
 
 def disable_moving(selected_unit):
     selected_unit.moving = False
@@ -489,9 +560,9 @@ def observe(unit): #évalue chaque direction à partir de la case
             case.observed = True
         elif case.wall:
             stop = True 
-    case.unit_observing = True
-    case.unit1_moved = True
-
+    unit.unit_observing = True
+    unit.unit1_moved = True
+    check_target()
     return unit.id
 
 def play_sound(sound):
@@ -501,6 +572,51 @@ def play_sound(sound):
         pygame.mixer.music.play(0)
         sound_played = True
 
+def attacking(unit): #Met l'unité en mode attaque
+    list_range = shoot_range(unit)
+    for case in list_range:
+        case.highlighted_shoot = True
+        print(case.id)
+
+def check_attack(target, unit): #Check si la case sélectionnée est attaquable
+    list_range = shoot_range(unit)
+    for case in list_range:
+        if target.id == case.id:
+            return True
+    return False
+
+def calcul_distance(unit1,unit2): #Calcul la distance de deux unités sur la même ligne/colonne
+    if unit1.col == unit2.col :
+        return abs(unit1.lig - unit2.lig)
+    elif unit1.lig == unit2.lig :
+        return abs(unit1.col - unit2.col)
+
+def attack_unit(target, unit): #Fait le calcul des dommages
+    unit.attacked = True
+    unit.unit1_moved = True
+    kill = False
+    prob = 0
+    dist = calcul_distance(target, unit)
+    if dist == 0:
+        kill = True
+    elif dist == 1:
+        if random.random() < 3/4 :
+            kill = True
+    elif dist == 2:
+        if random.random() < 2/3 :
+            kill = True
+    if kill:
+        target.unit2 = ""
+        print("killed")
+        check_target()
+        target.highlighted_shoot = False
+        #Envoyer l'info à l'autre joueur
+
+def disable_attacking(unit):
+    list_range = shoot_range(unit)
+    for case in list_range:
+        case.highlighted_shoot = False
+    return False
 
 def main():
     state = "entry"
@@ -525,9 +641,13 @@ def main():
     casesObserv = []
     #highlighting_mode = False #Les cases sont surlignées au passage de la souris
     moving_unit = False
+    attacking_unit = False
 
     ######### TEST ############
     grid[0][0].unit1 = "soldier"
+    grid[1][1].unit1 = "soldier"
+    grid[0][2].unit2 = "soldier"
+    grid[0][4].unit1 = "soldier"
     ###########################
 
     while run:
@@ -702,6 +822,8 @@ def main():
                     clic = True
                     if mouse.type == "button": #Si on clique sur un bouton
                         if mouse.id == "btn_move":
+                            if attacking_unit:
+                                attacking_unit = disable_attacking(selected_unit)
                             if not(selected_unit.unit1_moved):
                                 moving(selected_unit)
                                 moving_unit = True
@@ -709,6 +831,8 @@ def main():
                         elif mouse.id == "btn_obs":
                             if moving_unit:
                                 moving_unit = disable_moving(selected_unit)
+                            elif attacking_unit:
+                                attacking_unit = disable_attacking(selected_unit)
                             if not(selected_unit.unit_observing) and not(selected_unit.unit1_moved):
                                 idUnitObs = observe(selected_unit)
                                 for rangee in grid :
@@ -719,18 +843,27 @@ def main():
                         elif mouse.id == "btn_atk":
                             if moving_unit:
                                 moving_unit = disable_moving(selected_unit)
+                            if not(selected_unit.attacked):
+                                attacking_unit = True
+                                attacking(selected_unit)
                             print("btn_atk")
                     elif mouse.type == "case" and moving_unit: #Si on clique sur une case alors qu'une unité est en mouvement
                         if check_movement(mouse): #Si l'unité peut s'y déplacer
                             move_unit(selected_unit, mouse)
                             moving_unit = False
                             selected_unit = mouse
+                    elif mouse.type == "case" and attacking_unit: #Si on clique sur une case alors qu'une unité attaque
+                        if check_attack(mouse, selected_unit): #Si l'unité peut y attaquer
+                            attack_unit(mouse, selected_unit)
+                            attacking_unit = disable_attacking(selected_unit)
                     else:
                         clic = True
                         selected = False
                         selected_unit.highlighted = False
                         if moving_unit:
                             moving_unit = disable_moving(selected_unit)
+                        elif attacking_unit:
+                            attacking_unit = disable_attacking(selected_unit)
                         selected_unit = None
                 elif selected and not(clic): #Si on clique autre part et qu'une unité est sélectionnée, on déselectionne
                     clic = True
@@ -738,6 +871,8 @@ def main():
                     selected_unit.highlighted = False
                     if moving_unit:
                         moving_unit = disable_moving(selected_unit)
+                    elif attacking_unit:
+                        attacking_unit = disable_attacking(selected_unit)
                     selected_unit = None
             else :
                 clic = False
