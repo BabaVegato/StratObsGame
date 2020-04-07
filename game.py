@@ -53,6 +53,7 @@ clock = pygame.time.Clock()
 
 is_time_passed = False
 sound_played = False
+list_seen_units = []
 
 class case(object):
     def __init__(self, width, height, nbX, nbY):
@@ -274,17 +275,18 @@ soldier = soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.he
 listUnit = [soldier]
 
 def init_turn():
-    case = None
+    global list_seen_units
+    list_seen_units = []
     for i in range(11):
         for j in range(9):
-            case = grid[i][j]
-            case.observed = False
-            case.unit2 = ""
-            case.unit1_moved = False
-            case.remaining_moves = 2
-            case.target = False
-            case.attacked = False
-            case.unit_observing = False
+            grid[i][j].observed = False
+            grid[i][j].unit2 = ""
+            grid[i][j].unit1_moved = False
+            grid[i][j].remaining_moves = 2
+            grid[i][j].target = False
+            grid[i][j].attacked = False
+            grid[i][j].unit_observing = False
+            
 
 def pass_time(seconds):
     time.sleep(seconds) #Y'avait autre chose mais jsplus quoi et ça marche alors bon........
@@ -648,7 +650,6 @@ def give_seen_units(idUnitObs):
     observe(case_unit)
     
     case_unit.unit2 = "soldier"
-    list_seen_units = []
     for i in range(11):
         for j in range(9):
             if grid[i][j].observed:
@@ -668,7 +669,7 @@ def main():
     info_sent = False
     selected = False
     selected_obs = ""
-    nb_unit = 1
+    nb_unit = 3
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
@@ -679,7 +680,7 @@ def main():
     id_player = 0
     sound_played = False
     casesObserv = []
-    list_seen_units = []
+    global list_seen_units
     id_killed = None, None
     nothing = 0
     #highlighting_mode = False #Les cases sont surlignées au passage de la souris
@@ -950,17 +951,14 @@ def main():
                 info, state, idUnitObs, turn, action, list_seen_units)
            
         else:
-            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff 1": ready_to_play, "useful stuff 2" : 0}
+            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff 1": ready_to_play, "useful stuff 2" : list_seen_units}
             info_sent, state, modif, turn, other_ready_to_play, nothing = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play, nothing)
 
 
         if action == "atk":
                     id_killed = list_seen_units
         if action == "fin tour" :
-           for i in range(11):
-            for j in range(9):
-                grid[i][j].observed = False
-                grid[i][j].unit2 = ""
+            init_turn()
             action = ""
         if (turn != id_player) & (state=="game"):
             if action == "obs":
