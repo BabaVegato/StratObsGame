@@ -653,7 +653,7 @@ def give_seen_units(idUnitObs):
     return list_seen_units
 
 def main():
-    state = "game"
+    state = "entry"
     thr_created_conn_esta = False
     run = True
     serv = None
@@ -860,7 +860,11 @@ def main():
                             selected = True
                     if mouse.type == "button": #Si on clique sur un bouton
                         if mouse.id == "btn_end_turn":
-                            #On termine le tour
+                            turn+=1
+                            if turn == 2 : 
+                                turn = 0
+                            action = "fin tour"
+                            info_sent = False
                             print("End Turn")
                 elif mouse != "" and not(clic) and selected: #Si on clique et une unité est sélectionnée
                     clic = True
@@ -947,6 +951,12 @@ def main():
 
         if action == "atk":
                     id_killed = list_seen_units
+        if action == "fin tour" :
+           for i in range(11):
+            for j in range(9):
+                grid[i][j].observed = False
+                grid[i][j].unit2 = ""
+            action = ""
         if (turn != id_player) & (state=="game"):
             if action == "obs":
                 list_seen_units = give_seen_units(idUnitObs)
