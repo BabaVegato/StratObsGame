@@ -124,8 +124,7 @@ class case2(object):
                 elif self.unit1 == "soldier" and self.unit1_moved:
                     pygame.draw.rect(win, LIGHT_RED, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
                 if self.highlighted:
-                    #pygame.draw.rect(win, DARK_GREY, (self.x + (self.width-40)//2, self.y + (self.height-40)//2, 40, 40), 3)
-                    pass
+                    pygame.draw.rect(win, DARK_GREY, (self.x + (self.width-40)//2, self.y + (self.height-40)//2, 40, 40), 3)
                 if self.unit2 != "" and self.observed:
                     pygame.draw.rect(win, DARK_GREEN, (self.x+5+(self.width-20)//2,self.y+5+(self.width-20)//2,10,10))
             elif self.unit2 != "" and self.observed:
@@ -318,17 +317,21 @@ def shoot_range(unit): #Retourne la liste des unités attaquables par une unité
     for i in range(1,3): #Vertical
         if unit.lig+i < 11:
             if grid[unit.lig + i][unit.col].unit2 != "" and grid[unit.lig + i][unit.col].observed:
-                shoot_list.append(grid[unit.lig+i][unit.col])
+                if not(i==2 and grid[unit.lig + 1][unit.col].wall):
+                    shoot_list.append(grid[unit.lig+i][unit.col])
         if unit.lig-i >= 0:
             if grid[unit.lig - i][unit.col].unit2 != "" and grid[unit.lig - i][unit.col].observed:
-                shoot_list.append(grid[unit.lig-i][unit.col])
+                if not(i==2 and grid[unit.lig - 1][unit.col].wall):
+                    shoot_list.append(grid[unit.lig-i][unit.col])
     for j in range(1,3): #Horizontal
         if unit.col + j < 9:
             if grid[unit.lig][unit.col + j].unit2 != "" and grid[unit.lig][unit.col + j].observed:
-                shoot_list.append(grid[unit.lig][unit.col+j])
+                if not(j==2 and grid[unit.lig][unit.col + 1].wall):
+                    shoot_list.append(grid[unit.lig][unit.col+j])
         if unit.col - j >= 0:
             if grid[unit.lig][unit.col - j].unit2 != "" and grid[unit.lig][unit.col - j].observed:
-                shoot_list.append(grid[unit.lig][unit.col-j])
+                if not(j==2 and grid[unit.lig][unit.col - 1].wall):
+                    shoot_list.append(grid[unit.lig][unit.col-j])
     if unit.unit2 != "" and unit.observed:
         shoot_list.append(unit)
     return shoot_list
@@ -435,25 +438,27 @@ def pointed(obj):
     else :
         return False
 
-def check_placement(obj, case):
+def check_placement(obj, case, player):
     if obj.type == "obstacle":
         if obj.shape == "h":
-            if not(case.col == 8) and not(case.wall) and not(grid[case.lig][case.col+1].wall) :
+            if not(case.col == 8) and not(case.wall) and not(grid[case.lig][case.col+1].wall) and not(case.lig == 0) and not(case.lig == 10):
                 return True
         elif obj.shape == "v":
-            if not(case.lig == 10) and not(case.wall) and not(grid[case.lig+1][case.col].wall):
+            if not(case.lig == 10) and not(case.wall) and not(grid[case.lig+1][case.col].wall) and not(case.lig == 0 or case.lig == 9):
                 return True
-        elif obj.shape == "p" and not(case.wall):
+        elif obj.shape == "p" and not(case.wall) and not(case.lig == 0 or case.lig == 10):
             return True
         elif obj.shape == "t":
-            if not(case.col == 8 or case.col == 7 or case.lig == 10) and not(case.wall or grid[case.lig][case.col+1].wall or grid[case.lig][case.col+2].wall or grid[case.lig+1][case.col+1].wall) :
+            if not(case.col == 8 or case.col == 7 or case.lig == 10) and not(case.wall or grid[case.lig][case.col+1].wall or grid[case.lig][case.col+2].wall or grid[case.lig+1][case.col+1].wall) and not(case.lig == 0 or case.lig == 9):
                 return True
     elif obj.type == "unit":
         if obj.classe == "soldier":
             if not(case.wall) and case.unit1 == "":
-                return True
-    else:
-        return False
+                if player == 1 and case.lig == 0:
+                    return True
+                elif player == 0 and case.lig == 10:
+                    return True
+    return False
 
 def place_obs(obs, case):
     if obs.shape == "h":
@@ -635,7 +640,7 @@ def disable_attacking(unit):
     return False
 
 def main():
-    state = "game"
+    state = "units placement"
     thr_created_conn_esta = False
     run = True
     serv = None
@@ -757,7 +762,7 @@ def main():
                 elif selected and not(clic) and mouse != "": #On est sur un objet et un obstacle est sélectionné
                     clic = True
                     if mouse.type == "case": #On clique sur une case
-                        if(check_placement(selected_obs, mouse)):
+                        if(check_placement(selected_obs, mouse, id_player)):
                             place_obs(selected_obs, mouse)
                             selected_obs.selected = False
                             selected = False
@@ -800,7 +805,7 @@ def main():
                 elif selected and not(clic) and mouse != "": #On est sur un objet et une unité est sélectionnée
                     clic = True
                     if mouse.type == "case": #On clique sur une case
-                        if(check_placement(selected_unit, mouse)):
+                        if(check_placement(selected_unit, mouse, id_player)):
                             placeUnit(selected_unit, mouse)
                             selected_unit.selected = False
                             selected = False
