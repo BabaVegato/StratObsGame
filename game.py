@@ -477,6 +477,8 @@ def apply_modif(modif):
     if obs != None and case != None:
         place_obs(obs, case)
 
+
+
 def reset_reach():
     for i in range(11):
         for j in range(9):
@@ -610,13 +612,30 @@ def attack_unit(target, unit): #Fait le calcul des dommages
         print("killed")
         check_target()
         target.highlighted_shoot = False
-        #Envoyer l'info à l'autre joueur
+        print(target.id)
+        return target.id
+    return None, None
 
 def disable_attacking(unit):
     list_range = shoot_range(unit)
     for case in list_range:
         case.highlighted_shoot = False
     return False
+
+def give_seen_units(idUnitObs):
+    i1, j1 = idUnitObs
+    case_unit = grid[i1][j1]
+    observe(case_unit)
+    
+    case_unit.unit2 = "soldier"
+    list_seen_units = []
+    for i in range(11):
+        for j in range(9):
+            if grid[i][j].observed:
+                grid[i][j].observed = False
+                if grid[i][j].unit1 == "soldier":
+                    list_seen_units.append((i, j))
+    return list_seen_units
 
 def main():
     state = "entry"
@@ -629,16 +648,20 @@ def main():
     info_sent = False
     selected = False
     selected_obs = ""
-    nb_unit = 8
+    nb_unit = 1
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
     other_really_ready = False
+    action = ""
     idUnitObs = (0, 0)
     turn = 0
     id_player = 0
     sound_played = False
     casesObserv = []
+    list_seen_units = []
+    id_killed = None, None
+    nothing = 0
     #highlighting_mode = False #Les cases sont surlignées au passage de la souris
     moving_unit = False
     attacking_unit = False
@@ -835,9 +858,7 @@ def main():
                                 attacking_unit = disable_attacking(selected_unit)
                             if not(selected_unit.unit_observing) and not(selected_unit.unit1_moved):
                                 idUnitObs = observe(selected_unit)
-                                for rangee in grid :
-                                    for case in rangee:
-                                        casesObserv.append(case)
+                                action = "obs"
                                 info_sent = False
                             print("btn_obs")
                         elif mouse.id == "btn_atk":
@@ -854,8 +875,10 @@ def main():
                             selected_unit = mouse
                     elif mouse.type == "case" and attacking_unit: #Si on clique sur une case alors qu'une unité attaque
                         if check_attack(mouse, selected_unit): #Si l'unité peut y attaquer
-                            attack_unit(mouse, selected_unit)
+                            action = "atk"
+                            id_killed = attack_unit(mouse, selected_unit)
                             attacking_unit = disable_attacking(selected_unit)
+                            info_sent = False
                     else:
                         clic = True
                         selected = False
@@ -880,13 +903,48 @@ def main():
         
 
         if(state == "game"):
-            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff": ready_to_play}
-            info_sent, state, idUnitObs, turn, casesObserv = sending_and_receiving(serv, cli, info_sent, info, state, idUnitObs, turn, casesObserv)
-
+            if action == "obs":
+                info = {"state" : state, "modif": idUnitObs, "turn": turn, "useful stuff 1": action, "useful stuff 2": list_seen_units}
+                info_sent, state, idUnitObs, turn, action, list_seen_units = sending_and_receiving(serv, cli, info_sent, \
+                info, state, idUnitObs, turn, action, list_seen_units)
+            elif action == "atk":
+                info = {"state" : state, "modif": idUnitObs, "turn": turn, "useful stuff 1": action, "useful stuff 2": id_killed}
+                info_sent, state, idUnitObs, turn, action, id_killed = sending_and_receiving(serv, cli, info_sent, \
+                info, state, idUnitObs, turn, action, id_killed)
+            else :
+                info = {"state" : state, "modif": idUnitObs, "turn": turn, "useful stuff 1": action, "useful stuff 2": list_seen_units}
+                info_sent, state, idUnitObs, turn, action, list_seen_units = sending_and_receiving(serv, cli, info_sent, \
+                info, state, idUnitObs, turn, action, list_seen_units)
+           
         else:
-            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff": ready_to_play}
-            info_sent, state, modif, turn, other_ready_to_play = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play)
+            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff 1": ready_to_play, "useful stuff 2" : 0}
+            info_sent, state, modif, turn, other_ready_to_play, nothing = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play, nothing)
 
+
+        if action == "atk":
+                    id_killed = list_seen_units
+        if (turn != id_player) & (state=="game"):
+            if action == "obs":
+                list_seen_units = give_seen_units(idUnitObs)
+                im, jm = idUnitObs
+                grid[im][jm].unit2 = "soldier"
+                grid[im][jm].observed = "soldier"
+                info_sent = False
+            if(id_killed != (None, None)):
+                ik, jk = id_killed
+                grid[ik][jk].unit1 = ""
+                action = ""
+                id_killed = None, None
+
+        if turn == id_player & (state=="game") :
+            if action == "obs":
+                for i, j in list_seen_units:
+                    grid[i][j].unit2 = "soldier"
+                action = ""
+                info_sent = False
+            if action == "atk":
+                action = ""
+                id_killed = None, None
 
 
         if other_ready_to_play == True:
