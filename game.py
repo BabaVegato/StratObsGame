@@ -255,6 +255,7 @@ btn_move = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + ca
 btn_obs = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 2*case.height,"btn_obs","OBSERVE")
 btn_atk = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 3*case.height,"btn_atk","SHOOT")
 list_but = [btn_move, btn_obs, btn_atk]
+btn_end_turn = button2(case.offsetX + case.mapWidth + 2*case.width, case.offsetY + 6*case.height, "btn_end_turn", "End Turn")
 
 #Obstacles :
 obsV1 = obstacle((case.offsetX-3*case.height)//4,case.offsetY+case.height+case.gap,"v","obsV1",case)
@@ -272,6 +273,19 @@ listObs = [obsV1, obsV2, obsV3, obsH1, obsH2, obsH3, obsP1, obsP2, obsP3, obsT]
 #Units :
 soldier = soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.height)
 listUnit = [soldier]
+
+def init_turn():
+    case = None
+    for i in range(11):
+        for j in range(9):
+            case = grid[i][j]
+            case.observed = False
+            case.unit2 = ""
+            case.unit1_moved = False
+            case.remaining_moves = 2
+            case.target = False
+            case.attacked = False
+            case.unit_observing = False
 
 def pass_time(seconds):
     time.sleep(seconds) #Y'avait autre chose mais jsplus quoi et ça marche alors bon........
@@ -363,6 +377,7 @@ def display_text(state, turn, id_player, nb_unit):
                 win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
                 state_but(selected_unit)
                 display_but()
+            btn_end_turn.draw(win)
         else :
             text = font.render("Opponent's turn", True, (0, 128, 0))
             win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
@@ -620,7 +635,7 @@ def disable_attacking(unit):
     return False
 
 def main():
-    state = "entry"
+    state = "game"
     thr_created_conn_esta = False
     run = True
     serv = None
@@ -810,6 +825,8 @@ def main():
             for i in list_but:
                 if pointed(i):
                     mouse = i
+            if pointed(btn_end_turn):
+                mouse = btn_end_turn
 
             if pygame.mouse.get_pressed()[0]:
                 if mouse != "" and not(clic) and not(selected): #Si on clique et qu'aucune unité n'est sélectionnée
@@ -819,6 +836,10 @@ def main():
                             mouse.highlighted = True
                             selected_unit = mouse
                             selected = True
+                    if mouse.type == "button": #Si on clique sur un bouton
+                        if mouse.id == "btn_end_turn":
+                            #On termine le tour
+                            print("End Turn")
                 elif mouse != "" and not(clic) and selected: #Si on clique et une unité est sélectionnée
                     clic = True
                     if mouse.type == "button": #Si on clique sur un bouton
@@ -848,6 +869,9 @@ def main():
                                 attacking_unit = True
                                 attacking(selected_unit)
                             print("btn_atk")
+                        elif mouse.id == "btn_end_turn":
+                            #On termine le tour
+                            print("End Turn")
                     elif mouse.type == "case" and moving_unit: #Si on clique sur une case alors qu'une unité est en mouvement
                         if check_movement(mouse): #Si l'unité peut s'y déplacer
                             move_unit(selected_unit, mouse)
