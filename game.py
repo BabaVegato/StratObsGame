@@ -610,7 +610,8 @@ def attack_unit(target, unit): #Fait le calcul des dommages
         print("killed")
         check_target()
         target.highlighted_shoot = False
-        #Envoyer l'info à l'autre joueur
+        #Envoyer l'info à l'autre joueur :
+        #info = target.id
 
 def disable_attacking(unit):
     list_range = shoot_range(unit)
