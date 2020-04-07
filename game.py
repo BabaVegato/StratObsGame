@@ -900,7 +900,11 @@ def main():
                                 attacking(selected_unit)
                             print("btn_atk")
                         elif mouse.id == "btn_end_turn":
-                            #On termine le tour
+                            turn+=1
+                            if turn == 2 : 
+                                turn = 0
+                            action = "fin tour"
+                            info_sent = False
                             print("End Turn")
                     elif mouse.type == "case" and moving_unit: #Si on clique sur une case alors qu'une unité est en mouvement
                         if check_movement(mouse): #Si l'unité peut s'y déplacer
