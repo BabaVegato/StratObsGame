@@ -702,7 +702,7 @@ def give_seen_units(idUnitObs):
     return list_seen_units
 
 def main():
-    state = "game"
+    state = "entry"
     thr_created_conn_esta = False
     run = True
     serv = None
@@ -955,12 +955,14 @@ def main():
                                 turn = 0
                             action = "fin tour"
                             info_sent = False
+                            selected_unit.highlighted = False
                             print("End Turn")
                     elif mouse.type == "case" and moving_unit: #Si on clique sur une case alors qu'une unité est en mouvement
                         if check_movement(mouse): #Si l'unité peut s'y déplacer
                             move_unit(selected_unit, mouse)
                             if test_win(id_player):
-                                print("Victoire")
+                                state = "end game"
+                                info_sent = False
                             moving_unit = False
                             selected_unit = mouse
                     elif mouse.type == "case" and attacking_unit: #Si on clique sur une case alors qu'une unité attaque
