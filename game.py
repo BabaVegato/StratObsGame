@@ -360,7 +360,7 @@ def state_but(unit): #Permet de griser les boutons
     if shoot_list != [] and not(unit.attacked):
         btn_atk.grayed = False
 
-def display_text(state, turn, id_player, nb_unit, error):
+def display_text(state, turn, id_player, nb_unit, units_alive, error):
     if state == "map creation":
         if turn == id_player :
             text_turn = font.render("Your turn to place", True, (0, 128, 0))
@@ -395,6 +395,14 @@ def display_text(state, turn, id_player, nb_unit, error):
         else :
             text = font.render("Opponent's turn", True, (0, 128, 0))
             win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//20 - text.get_height() // 2))
+    
+    elif state == "end game":
+        if units_alive > 0 :
+            text = fontTitle.render("You won !", True, (0, 128, 0))
+            win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//2 - text.get_height() // 2))
+        else :
+            text = fontTitle.render("You loose !", True, (128, 0, 0))
+            win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//2 - text.get_height() // 2))
 
 def display_unit():
     soldier.draw(win)
@@ -417,7 +425,7 @@ def set_zone(player, state):
                 else :
                     grid[i][j].observed = True
 
-def redraw_window(state, turn, id_player, nb_unit, error):
+def redraw_window(state, turn, id_player, nb_unit, units_alive, error):
     if state == "entry" :
         win.fill((255, 255, 255))
         title = fontTitle.render("StratObsGame", False, (0,0,0))
@@ -445,7 +453,7 @@ def redraw_window(state, turn, id_player, nb_unit, error):
         
     elif state =="map creation":
         win.fill((240, 240, 240))
-        display_text(state , turn, id_player, nb_unit, error)
+        display_text(state , turn, id_player, nb_unit, units_alive, error)
         set_zone(id_player, state)
         display_grid()
         display_obstacles()
@@ -453,7 +461,7 @@ def redraw_window(state, turn, id_player, nb_unit, error):
     
     elif state == "units placement":
         win.fill((240,240,240))
-        display_text(state,turn, id_player, nb_unit, error)
+        display_text(state,turn, id_player, nb_unit, units_alive, error)
         set_zone(id_player, state)
         display_grid()
         display_unit()
@@ -461,8 +469,13 @@ def redraw_window(state, turn, id_player, nb_unit, error):
     
     elif state == "game":
         win.fill((240,240,240))
-        display_text(state,turn,id_player,nb_unit, error)
+        display_text(state,turn,id_player,nb_unit, units_alive, error)
         display_grid()
+        pygame.display.update()
+
+    elif state == "end game":
+        win.fill((240,240,240))
+        display_text(state,turn,id_player,nb_unit, units_alive, error)
         pygame.display.update()
 
 def pointed(obj):
@@ -699,7 +712,7 @@ def main():
     info_sent = False
     selected = False
     selected_obs = ""
-    nb_unit = 3
+    nb_unit = 1
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
@@ -717,12 +730,13 @@ def main():
     moving_unit = False
     attacking_unit = False
     error = False
+    units_alive = nb_unit
 
     ######### TEST ############
-    grid[0][0].unit1 = "soldier"
-    grid[1][1].unit1 = "soldier"
-    grid[0][2].unit2 = "soldier"
-    grid[0][4].unit1 = "soldier"
+    #grid[0][0].unit1 = "soldier"
+    #grid[1][1].unit1 = "soldier"
+    #grid[0][2].unit2 = "soldier"
+    #grid[0][4].unit1 = "soldier"
     ###########################
 
     while run:
@@ -976,6 +990,14 @@ def main():
             else :
                 clic = False
 
+            units_alive = 0
+            for i in range(11):
+                for j in range(9):
+                    if grid[i][j].unit1 == "soldier":
+                        units_alive +=1
+            if units_alive == 0:
+                state = "end game"
+                info_sent = False
         
 
         if(state == "game"):
@@ -1030,7 +1052,7 @@ def main():
             other_really_ready = True
 
         apply_modif(modif)
-        redraw_window(state, turn, id_player, nb_unit, error)
+        redraw_window(state, turn, id_player, nb_unit, units_alive, error)
 
 main()
 pygame.quit()
