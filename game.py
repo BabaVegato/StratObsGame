@@ -398,6 +398,24 @@ def display_text(state, turn, id_player, nb_unit, units_alive, error):
 def display_unit():
     soldier.draw(win)
 
+def set_zone(player, state):
+    if state == "units placement":
+        for i in range(11):
+            for j in range(9):
+                if i == 0 and player == 1:
+                    grid[i][j].observed = True
+                elif i == 10 and player == 0:
+                    grid[i][j].observed = True
+                else :
+                    grid[i][j].observed = False
+    elif state == "map creation":
+        for i in range(11):
+            for j in range(9):
+                if i == 0 or i == 10:
+                    grid[i][j].observed = False
+                else :
+                    grid[i][j].observed = True
+
 def redraw_window(state, turn, id_player, nb_unit, units_alive, error):
     if state == "entry" :
         win.fill((255, 255, 255))
@@ -427,6 +445,7 @@ def redraw_window(state, turn, id_player, nb_unit, units_alive, error):
     elif state =="map creation":
         win.fill((240, 240, 240))
         display_text(state , turn, id_player, nb_unit, units_alive, error)
+        set_zone(id_player, state)
         display_grid()
         display_obstacles()
         pygame.display.update()
@@ -434,6 +453,7 @@ def redraw_window(state, turn, id_player, nb_unit, units_alive, error):
     elif state == "units placement":
         win.fill((240,240,240))
         display_text(state,turn, id_player, nb_unit, units_alive, error)
+        set_zone(id_player, state)
         display_grid()
         display_unit()
         pygame.display.update()
@@ -673,7 +693,7 @@ def give_seen_units(idUnitObs):
     return list_seen_units
 
 def main():
-    state = "entry"
+    state = "game"
     thr_created_conn_esta = False
     run = True
     serv = None
