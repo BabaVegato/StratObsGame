@@ -53,6 +53,7 @@ clock = pygame.time.Clock()
 
 is_time_passed = False
 sound_played = False
+list_seen_units = []
 
 class case(object):
     def __init__(self, width, height, nbX, nbY):
@@ -274,17 +275,18 @@ soldier = soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.he
 listUnit = [soldier]
 
 def init_turn():
-    case = None
+    global list_seen_units
+    list_seen_units = []
     for i in range(11):
         for j in range(9):
-            case = grid[i][j]
-            case.observed = False
-            case.unit2 = ""
-            case.unit1_moved = False
-            case.remaining_moves = 2
-            case.target = False
-            case.attacked = False
-            case.unit_observing = False
+            grid[i][j].observed = False
+            grid[i][j].unit2 = ""
+            grid[i][j].unit1_moved = False
+            grid[i][j].remaining_moves = 2
+            grid[i][j].target = False
+            grid[i][j].attacked = False
+            grid[i][j].unit_observing = False
+            
 
 def pass_time(seconds):
     time.sleep(seconds) #Y'avait autre chose mais jsplus quoi et ça marche alors bon........
@@ -349,7 +351,7 @@ def state_but(unit): #Permet de griser les boutons
     if shoot_list != [] and not(unit.attacked):
         btn_atk.grayed = False
 
-def display_text(state, turn, id_player, nb_unit):
+def display_text(state, turn, id_player, nb_unit, error):
     if state == "map creation":
         if turn == id_player :
             text_turn = font.render("Your turn to place", True, (0, 128, 0))
@@ -406,10 +408,13 @@ def set_zone(player, state):
                 else :
                     grid[i][j].observed = True
 
-def redraw_window(state, turn, id_player, nb_unit):
+def redraw_window(state, turn, id_player, nb_unit, error):
     if state == "entry" :
         win.fill((255, 255, 255))
         title = fontTitle.render("StratObsGame", False, (0,0,0))
+        if error:
+            text_error = font.render("Aucune partie trouvée !", True, (128, 0, 0))
+            win.blit(text_error, (int(winWidth/1.5),30 + winHeight*2/3))
         win.blit(title, (int(winWidth/5+25),50)) #not responsive
         btnCreate.draw(win)
         btnJoin.draw(win)
@@ -431,7 +436,7 @@ def redraw_window(state, turn, id_player, nb_unit):
         
     elif state =="map creation":
         win.fill((240, 240, 240))
-        display_text(state , turn, id_player, nb_unit)
+        display_text(state , turn, id_player, nb_unit, error)
         set_zone(id_player, state)
         display_grid()
         display_obstacles()
@@ -439,7 +444,7 @@ def redraw_window(state, turn, id_player, nb_unit):
     
     elif state == "units placement":
         win.fill((240,240,240))
-        display_text(state,turn, id_player, nb_unit)
+        display_text(state,turn, id_player, nb_unit, error)
         set_zone(id_player, state)
         display_grid()
         display_unit()
@@ -447,7 +452,7 @@ def redraw_window(state, turn, id_player, nb_unit):
     
     elif state == "game":
         win.fill((240,240,240))
-        display_text(state,turn,id_player,nb_unit)
+        display_text(state,turn,id_player,nb_unit, error)
         display_grid()
         pygame.display.update()
 
@@ -668,7 +673,6 @@ def give_seen_units(idUnitObs):
     observe(case_unit)
     
     case_unit.unit2 = "soldier"
-    list_seen_units = []
     for i in range(11):
         for j in range(9):
             if grid[i][j].observed:
@@ -688,7 +692,7 @@ def main():
     info_sent = False
     selected = False
     selected_obs = ""
-    nb_unit = 1
+    nb_unit = 3
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
@@ -699,12 +703,13 @@ def main():
     id_player = 0
     sound_played = False
     casesObserv = []
-    list_seen_units = []
+    global list_seen_units
     id_killed = None, None
     nothing = 0
     #highlighting_mode = False #Les cases sont surlignées au passage de la souris
     moving_unit = False
     attacking_unit = False
+    error = False
 
     ######### TEST ############
     grid[0][0].unit1 = "soldier"
@@ -742,14 +747,19 @@ def main():
                     info_sent = False
 
                 if mouse == btnJoin.id and not(clic):
-                    clic = True
-                    cli = client.Client()
-                    cli.create_client(host, port)
-                    cli_wait = threading.Thread(target=cli.wait_for_object)
-                    cli_wait.daemon = True
-                    cli_wait.start()
-                    id_player = 1 # le client est le 2e joueur
-                    info_sent = False
+                    try:
+                        clic = True
+                        cli = client.Client()
+                        cli.create_client(host, port)
+                        cli_wait = threading.Thread(target=cli.wait_for_object)
+                        cli_wait.daemon = True
+                        cli_wait.start()
+                        id_player = 1 # le client est le 2e joueur
+                        error = False
+                        info_sent = False
+                    except socket.error:
+                        print("erreur")
+                        error = True
             else :
                 clic = False
                 
@@ -919,7 +929,11 @@ def main():
                                 attacking(selected_unit)
                             print("btn_atk")
                         elif mouse.id == "btn_end_turn":
-                            #On termine le tour
+                            turn+=1
+                            if turn == 2 : 
+                                turn = 0
+                            action = "fin tour"
+                            info_sent = False
                             print("End Turn")
                     elif mouse.type == "case" and moving_unit: #Si on clique sur une case alors qu'une unité est en mouvement
                         if check_movement(mouse): #Si l'unité peut s'y déplacer
@@ -970,7 +984,7 @@ def main():
                 info, state, idUnitObs, turn, action, list_seen_units)
            
         else:
-            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff 1": ready_to_play, "useful stuff 2" : 0}
+            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff 1": ready_to_play, "useful stuff 2" : list_seen_units}
             info_sent, state, modif, turn, other_ready_to_play, nothing = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play, nothing)
 
 
@@ -1007,7 +1021,7 @@ def main():
             other_really_ready = True
 
         apply_modif(modif)
-        redraw_window(state, turn, id_player, nb_unit)
+        redraw_window(state, turn, id_player, nb_unit, error)
 
 main()
 pygame.quit()
