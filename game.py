@@ -274,6 +274,17 @@ listObs = [obsV1, obsV2, obsV3, obsH1, obsH2, obsH3, obsP1, obsP2, obsP3, obsT]
 soldier = soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.height)
 listUnit = [soldier]
 
+def test_win(player):
+    if player == 1:
+        for j in range(9):
+            if grid[10][j].unit1 != "":
+                return True
+    elif player == 0:
+        for j in range(9):
+            if grid[0][j].unit1 != "":
+                return True
+    return False
+
 def init_turn():
     global list_seen_units
     list_seen_units = []
@@ -286,7 +297,6 @@ def init_turn():
             grid[i][j].target = False
             grid[i][j].attacked = False
             grid[i][j].unit_observing = False
-            
 
 def pass_time(seconds):
     time.sleep(seconds) #Y'avait autre chose mais jsplus quoi et ça marche alors bon........
@@ -344,8 +354,7 @@ def state_but(unit): #Permet de griser les boutons
     btn_atk.grayed = True
     if unit.unit1_moved:
         btn_move.grayed = True
-        btn_obs.grayed = True
-    elif unit.remaining_moves < 2:
+    if unit.unit_observing:
         btn_obs.grayed = True
     shoot_list = shoot_range(unit)
     if shoot_list != [] and not(unit.attacked):
@@ -521,8 +530,6 @@ def apply_modif(modif):
     case = identify_case(modif[1])
     if obs != None and case != None:
         place_obs(obs, case)
-
-
 
 def reset_reach():
     for i in range(11):
@@ -885,7 +892,7 @@ def main():
             if pointed(btn_end_turn):
                 mouse = btn_end_turn
 
-            if pygame.mouse.get_pressed()[0]:
+            if pygame.mouse.get_pressed()[0] and turn == id_player:
                 if mouse != "" and not(clic) and not(selected): #Si on clique et qu'aucune unité n'est sélectionnée
                     clic = True
                     if mouse.type == "case": #Si on clique sur une case
@@ -916,7 +923,7 @@ def main():
                                 moving_unit = disable_moving(selected_unit)
                             elif attacking_unit:
                                 attacking_unit = disable_attacking(selected_unit)
-                            if not(selected_unit.unit_observing) and not(selected_unit.unit1_moved):
+                            if not(selected_unit.unit_observing):
                                 idUnitObs = observe(selected_unit)
                                 action = "obs"
                                 info_sent = False
@@ -938,6 +945,8 @@ def main():
                     elif mouse.type == "case" and moving_unit: #Si on clique sur une case alors qu'une unité est en mouvement
                         if check_movement(mouse): #Si l'unité peut s'y déplacer
                             move_unit(selected_unit, mouse)
+                            if test_win(id_player):
+                                print("Victoire")
                             moving_unit = False
                             selected_unit = mouse
                     elif mouse.type == "case" and attacking_unit: #Si on clique sur une case alors qu'une unité attaque
