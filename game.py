@@ -249,8 +249,8 @@ for i in range(11):
 #Boutons :
 butHeight1 = 100
 butWidth1 = 300
-btnCreate = button(int(winWidth/2-butWidth1/2), int(winHeight/3), butWidth1, butHeight1, "btnCreate", "Créer une partie")
-btnJoin = button(int(winWidth/2-butWidth1/2), int(winHeight*2/3), butWidth1, butHeight1, "btnJoin", "Rejoindre une partie")
+btnCreate = button(int(winWidth/2-butWidth1/2), int(winHeight/3), butWidth1, butHeight1, "btnCreate", "        Create a game")
+btnJoin = button(int(winWidth/2-butWidth1/2), int(winHeight*2/3), butWidth1, butHeight1, "btnJoin", "            Find a game")
 btn_move = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + case.height,"btn_move", "MOVE")
 btn_obs = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 2*case.height,"btn_obs","OBSERVE")
 btn_atk = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 3*case.height,"btn_atk","SHOOT")
@@ -635,6 +635,9 @@ def observe(unit): #évalue chaque direction à partir de la case
 def play_sound(sound):
     global sound_played
     if sound_played == False :
+        print(sound)
+        print(sound)
+        print(sound)
         pygame.mixer.music.load(f'media\{sound}.wav')
         pygame.mixer.music.play(0)
         sound_played = True
@@ -721,7 +724,7 @@ def main():
     idUnitObs = (0, 0)
     turn = 0
     id_player = 0
-    sound_played = False
+    global sound_played
     casesObserv = []
     global list_seen_units
     id_killed = None, None
@@ -840,7 +843,8 @@ def main():
                             selected_obs.selected = False
                             selected = False
                             modif = selected_obs.id, mouse.id
-                            
+                            sound_played = False
+                            play_sound("place" + str(random.randint(1, 4)))
                             turn+=1
                             if turn == 2 : turn = 0
                             
@@ -959,6 +963,8 @@ def main():
                             print("End Turn")
                     elif mouse.type == "case" and moving_unit: #Si on clique sur une case alors qu'une unité est en mouvement
                         if check_movement(mouse): #Si l'unité peut s'y déplacer
+                            sound_played = False
+                            play_sound("walk" + "1" + str(random.randint(1, 3)))
                             move_unit(selected_unit, mouse)
                             if test_win(id_player):
                                 state = "end game"
@@ -967,6 +973,8 @@ def main():
                             selected_unit = mouse
                     elif mouse.type == "case" and attacking_unit: #Si on clique sur une case alors qu'une unité attaque
                         if check_attack(mouse, selected_unit): #Si l'unité peut y attaquer
+                            sound_played = False
+                            play_sound("gunshot" + str(random.randint(1, 5)))
                             action = "atk"
                             id_killed = attack_unit(mouse, selected_unit)
                             attacking_unit = disable_attacking(selected_unit)
@@ -1048,7 +1056,6 @@ def main():
             if action == "atk":
                 action = ""
                 id_killed = None, None
-
 
         if other_ready_to_play == True:
             other_really_ready = True
