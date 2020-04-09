@@ -33,18 +33,7 @@ winWidth = 1300
 winHeight = 750
 
 #Grille
-grid = [[None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None]]
+grid = [[None for j in range(9)] for i in range(12)]
 
 win = pygame.display.set_mode((winWidth, winHeight))
 
