@@ -27,6 +27,7 @@ RED = (190,0,0)
 GREEN = (107,142,35)
 GREY = (105,105,105)
 LIGHT_RED = (255, 102, 102)
+UNIT_MAX = 1
 
 #Dimensions écran
 winWidth = 1300
@@ -133,12 +134,12 @@ class button(object):
         self.text = text
         self.xMax = self.x + self.width
         self.yMax = self.y + self.height
-        self.hitbox = (self.x, self.y, self.width, self.height)
-        self.posText = (self.x+5, int(self.y+self.height/4)+5) #à améliorer
     def draw(self, win):
+        hitbox = (self.x, self.y, self.width, self.height)
         text = fontBtn.render(self.text, False, (240,240,240))
-        pygame.draw.rect(win, DARK_GREY, self.hitbox)
-        win.blit(text, self.posText)
+        posText = (self.x + (self.width - text.get_width())//2, self.y + (self.height - text.get_height())//2)
+        pygame.draw.rect(win, DARK_GREY, hitbox)
+        win.blit(text, posText)
 
 class button2(object):
     def __init__(self, x, y, id, text):
@@ -245,6 +246,12 @@ btn_obs = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 2*c
 btn_atk = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 3*case.height,"btn_atk","SHOOT")
 list_but = [btn_move, btn_obs, btn_atk]
 btn_end_turn = button2(case.offsetX + case.mapWidth + 2*case.width, case.offsetY + 6*case.height, "btn_end_turn", "End Turn")
+btn_again = button(winWidth//2 - 200//2,winHeight-2.7*100,200,70,"btn_again", "Play Again")
+btn_menu = button(winWidth//2 - 200//2,winHeight-150,200,70,"btn_menu", "Game Menu")
+list_but_end_game = [btn_again, btn_menu]
+bubble_yes = button(0,0,100,50,"bubble_yes", "Yes")
+bubble_no = button(0,0,100,50,"bubble_no", "No")
+list_but_bubble = [bubble_yes, bubble_no]
 
 #Obstacles :
 obsV1 = obstacle((case.offsetX-3*case.height)//4,case.offsetY+case.height+case.gap,"v","obsV1",case)
@@ -262,6 +269,68 @@ listObs = [obsV1, obsV2, obsV3, obsH1, obsH2, obsH3, obsP1, obsP2, obsP3, obsT]
 #Units :
 soldier = soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.height)
 listUnit = [soldier]
+
+class bubble(object): #Amélioration possible : permettre le saut de ligne
+    def __init__(self, text):
+        paddingX = 20
+        paddingY = 20
+        self.paddingBut = 10
+        self.text = fontBtn.render(text, False, (240,240,240))
+        self.width = max(self.text.get_width() + 2*paddingX, 100) #A MODIFIER
+        self.height = max(self.text.get_height() + 2*paddingY, 200) #A MODIFIER
+        self.x = winWidth//2 - self.width//2
+        self.y = winHeight//2 - self.height//2
+        self.pos_text = (self.x + paddingX, self.y + paddingY)
+        self.hitbox = (self.x, self.y, self.width, self.height)
+    def draw(self, win):
+        pygame.draw.rect(win,GREY,self.hitbox)
+        win.blit(self.text, self.pos_text)
+        bubble_yes.x = self.x + (self.width - 2*bubble_yes.width)//3
+        bubble_no.x = self.x + 2*(self.width - 2*bubble_yes.width)//3 + bubble_no.width
+        bubble_yes.y = self.y + self.height - bubble_yes.height - self.paddingBut
+        bubble_no.y = self.y + self.height - bubble_yes.height - self.paddingBut
+        bubble_yes.xMax, bubble_yes.yMax = bubble_yes.x + bubble_yes.width, bubble_yes.y + bubble_yes.height
+        bubble_no.xMax, bubble_no.yMax = bubble_no.x + bubble_no.width, bubble_no.y + bubble_no.height
+        bubble_yes.draw(win)
+        bubble_no.draw(win)
+
+bubble_map = bubble("Do you want to play on the same map ?")
+
+def init_obstacle():
+    for obs in listObs:
+        obs.placed = False
+    obsV1.x, obsV1.y = (case.offsetX-3*case.height)//4,case.offsetY+case.height+case.gap
+    obsV2.x, obsV2.y = 2*(case.offsetX-3*case.height)//4+case.height,case.offsetY+case.height+case.gap
+    obsV3.x, obsV3.y = 3*(case.offsetX-3*case.height)//4+2*case.height,case.offsetY+case.height+case.gap
+    obsH1.x, obsH1.y = (case.offsetX-3*case.height)//4,case.offsetY+4*case.height+5*case.gap
+    obsH2.x, obsH2.y = (case.offsetX-3*case.height)//4,case.offsetY+6*case.height+7*case.gap
+    obsH3.x, obsH3.y = (case.offsetX-3*case.height)//4,case.offsetY+8*case.height+9*case.gap
+    obsP1.x, obsP1.y = (case.offsetX-3*case.height)//4+3*case.height,case.offsetY+4*case.height+5*case.gap
+    obsP2.x, obsP2.y = (case.offsetX-3*case.height)//4+5*case.height,case.offsetY+4*case.height+5*case.gap
+    obsP3.x, obsP3.y = (case.offsetX-3*case.height)//4+4*case.height,case.offsetY+6*case.height+7*case.gap
+    obsT.x, obsT.y = (case.offsetX-3*case.height)//4+3*case.height,case.offsetY+8*case.height+9*case.gap
+
+def init_game_mk():
+    for i in range(11):
+        for j in range(9):
+            case = grid[i][j]
+            case.unit1 = ""
+            case.unit1_moved = False
+            case.moving = False
+            case.remaining_moves = 2
+            case.unit_observing = False
+            case.attacked = False
+            case.target = False
+            case.observed = False
+            case.reachable = False
+            case.wall = False
+            case.unit2 = ""
+            case.highlighted_shoot = False
+
+def init_game():
+    for i in range(11):
+        for j in range(9):
+            grid[i][j] = case2(i,j)
 
 def test_win(player):
     if player == 1:
@@ -414,7 +483,7 @@ def set_zone(player, state):
                 else :
                     grid[i][j].observed = True
 
-def redraw_window(state, turn, id_player, nb_unit, units_alive, error):
+def redraw_window(state, turn, id_player, nb_unit, units_alive, error, bubble):
     if state == "entry" :
         win.fill((255, 255, 255))
         title = fontTitle.render("StratObsGame", False, (0,0,0))
@@ -465,6 +534,10 @@ def redraw_window(state, turn, id_player, nb_unit, units_alive, error):
     elif state == "end game":
         win.fill((240,240,240))
         display_text(state,turn,id_player,nb_unit, units_alive, error)
+        for but in list_but_end_game:
+            but.draw(win)
+        if bubble[0]:
+            bubble_map.draw(win)
         pygame.display.update()
 
 def pointed(obj):
@@ -704,7 +777,7 @@ def main():
     info_sent = False
     selected = False
     selected_obs = ""
-    nb_unit = 1
+    nb_unit = UNIT_MAX
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
@@ -723,6 +796,9 @@ def main():
     attacking_unit = False
     error = False
     units_alive = nb_unit
+    revenge = False # Réponse du joueur à une demande de nouvelle partie
+    master = False # Meneur en cas de rematch
+    bubble = [False] # Liste des bulles 1/map_keeping
 
     ######### TEST ############
     #grid[0][0].unit1 = "soldier"
@@ -797,6 +873,8 @@ def main():
                 info_sent = False
 
         elif (state == "map creation") & (turn == id_player):
+            if list_seen_units == 1:
+                list_seen_units = 0
             nb_obs_mis_total = 0
             for obs in listObs :
                 if obs.placed :
@@ -846,6 +924,8 @@ def main():
                 clic = False
 
         elif state == "units placement":   
+            if list_seen_units == 1:
+                list_seen_units = 0
             if ((other_really_ready == True) & (ready_to_play == True) & (serv != None)):
                 print("go to game")
                 state = "game"
@@ -997,7 +1077,50 @@ def main():
             if units_alive == 0:
                 state = "end game"
                 info_sent = False
-        
+    
+        elif state == "end game":
+            mouse = None
+            for but in list_but_end_game:
+                if pointed(but):
+                    mouse = but
+            for but in list_but_bubble:
+                if pointed(but) and bubble[0]:
+                    mouse = but
+            if pygame.mouse.get_pressed()[0]:
+                if mouse != None and not(clic):
+                    clic = True
+                    if mouse.id == "btn_menu" and not(bubble[0]):
+                        state = "entry" 
+                        init_game()
+                        ############## Délinker le client et le server
+                    elif mouse.id == "btn_again" and not(bubble[0]):
+                        ############ S'enquérir de l'accord de l'autre joueur
+                        ############ Waiting for an answer
+                        # Si ok :   
+                        print("again")
+                        revenge = True
+                        master = True
+                    elif bubble[0] and mouse.id == "bubble_yes":
+                        print("yes")
+                        init_game_mk()
+                        state = "units placement"
+                        list_seen_units = 1
+                        nb_unit = UNIT_MAX
+                        info_sent = False
+                        bubble[0] = False
+                    elif bubble[0] and mouse.id == "bubble_no":
+                        init_game()
+                        state = "map creation"
+                        list_seen_units = 1
+                        nb_units = UNIT_MAX
+                        init_obstacle()
+                        info_sent = False
+                        bubble[0] = False
+            else :
+                clic = False
+
+            if revenge and not(bubble[0]) and master:
+                bubble[0] = True
 
         if(state == "game"):
             if action == "obs":
@@ -1018,8 +1141,18 @@ def main():
             info_sent, state, modif, turn, other_ready_to_play, nothing = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play, nothing)
 
 
+        if state == "units placement" and nothing == 1:
+            init_game_mk()
+            nothing = 0
+            nb_unit = UNIT_MAX
+
+        if state == "map creation" and nothing == 1:
+            init_game()
+            nothing = 0
+            nb_unit = UNIT_MAX
+
         if action == "atk":
-                    id_killed = list_seen_units
+            id_killed = list_seen_units
         if action == "fin tour" :
             init_turn()
             action = ""
@@ -1050,7 +1183,8 @@ def main():
             other_really_ready = True
 
         apply_modif(modif)
-        redraw_window(state, turn, id_player, nb_unit, units_alive, error)
+        redraw_window(state, turn, id_player, nb_unit, units_alive, error, bubble)
+        #print(bubble[0])
 
 main()
 pygame.quit()
