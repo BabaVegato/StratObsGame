@@ -28,14 +28,10 @@ GREEN = (107,142,35)
 GREY = (105,105,105)
 RED = (190,0,0)
 LIGHT_RED = (255, 102, 102)
-<<<<<<< HEAD
-UNIT_MAX = 1
-=======
 PURPLE = (160, 32, 240)
 LIGHT_PURPLE = (206, 126, 209)
 BROWN = (139,69,19)
 LIGHT_BROWN = (205,133,63)
->>>>>>> 386b41cba9e8d2c5c2291765268768aa1f0e6efc
 
 #Dimensions écran
 winWidth = 1300
@@ -126,9 +122,13 @@ class case2(object):
                     pygame.draw.rect(win, BROWN, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
                 elif self.unit1 == "sniper" and self.unit1_moved:
                     pygame.draw.rect(win, LIGHT_BROWN, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
-                elif self.unit1 == "grenade" and (not(self.unit1_moved) or not(self.attacked) and self.target): #L'unité a encore des actions a effectuer
+                elif self.unit1 == "grenade1" and (not(self.unit1_moved) or not(self.attacked) and self.target): #L'unité a encore des actions a effectuer
                     pygame.draw.rect(win, PURPLE, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
-                elif self.unit1 == "grenade" and self.unit1_moved:
+                elif self.unit1 == "grenade1" and self.unit1_moved:
+                    pygame.draw.rect(win, LIGHT_PURPLE, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+                elif self.unit1 == "grenade0" and (not(self.unit1_moved) or not(self.attacked) and self.target): #L'unité a encore des actions a effectuer
+                    pygame.draw.rect(win, PURPLE, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+                elif self.unit1 == "grenade0" and self.unit1_moved:
                     pygame.draw.rect(win, LIGHT_PURPLE, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
                 
                 
@@ -182,6 +182,8 @@ class button2(object):
         if self.grayed :
             pygame.draw.rect(win,GRIS,self.hitbox)
         elif self.id == "btn_atk":
+            pygame.draw.rect(win,RED,self.hitbox)
+        elif self.id == "btn_gren":
             pygame.draw.rect(win,RED,self.hitbox)
         else:
             pygame.draw.rect(win,DARK_GREY,self.hitbox)
@@ -249,7 +251,7 @@ class Soldier(object): #Permet de gérer le placement des unités
                 x,y = pygame.mouse.get_pos()
                 hitbox = (x-self.width//2,y-self.height//2,self.width, self.height)
                 pygame.draw.rect(win, RED, hitbox)
-        if(self.classe == "grenade"):
+        if(self.classe == "grenade1"):
             pygame.draw.rect(win, PURPLE, self.hitbox)
             if self.selected :
                 x,y = pygame.mouse.get_pos()
@@ -277,7 +279,8 @@ btnJoin = button(int(winWidth/2-butWidth1/2), int(winHeight*2/3), butWidth1, but
 btn_move = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + case.height,"btn_move", "MOVE")
 btn_obs = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 2*case.height,"btn_obs","OBSERVE")
 btn_atk = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 3*case.height,"btn_atk","SHOOT")
-list_but = [btn_move, btn_obs, btn_atk]
+btn_gren = button2(case.offsetX + case.mapWidth + 2*case.width,case.offsetY + 3*case.height,"btn_gren","GRENADE")
+list_but = [btn_move, btn_obs, btn_atk, btn_gren]
 btn_end_turn = button2(case.offsetX + case.mapWidth + 2*case.width, case.offsetY + 6*case.height, "btn_end_turn", "End Turn")
 btn_again = button(winWidth//2 - 200//2,winHeight-2.7*100,200,70,"btn_again", "Play Again")
 btn_menu = button(winWidth//2 - 200//2,winHeight-150,200,70,"btn_menu", "Game Menu")
@@ -301,10 +304,10 @@ listObs = [obsV1, obsV2, obsV3, obsH1, obsH2, obsH3, obsP1, obsP2, obsP3, obsT]
 
 #Units :
 gunner = Soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.height, "gunner")
-grenade = Soldier(15 + case.offsetX+case.mapWidth+3*case.width,50 + case.offsetY+2*case.height, "grenade")
+grenade1 = Soldier(15 + case.offsetX+case.mapWidth+3*case.width,50 + case.offsetY+2*case.height, "grenade1")
 sniper = Soldier(case.offsetX+case.mapWidth+3*case.width - 5,100 + case.offsetY+2*case.height, "sniper")
-list_unit = [gunner, grenade, sniper]
-list_classes = ["gunner", "grenade", "sniper"]
+list_unit = [gunner, grenade1, sniper]
+list_classes = ["gunner", "grenade1", "grenade0", "sniper"]
 
 class bubble(object): #Amélioration possible : permettre le saut de ligne
     def __init__(self, text):
@@ -414,9 +417,18 @@ def find_selected_unit():
                 return grid[i][j]
     return None
 
-def display_but():
+def display_but(unit):
+    # ne dessine pas btn_atk si l'untié est un grenadier
     for but in list_but:
-        but.draw(win)
+        if but.id == "btn_atk" :
+            if (unit.unit1 != "grenade0") and (unit.unit1 != "grenade1") :
+                but.draw(win)
+
+        elif but.id == "btn_gren" :
+            if (unit.unit1 == "grenade0") or (unit.unit1 == "grenade1") :
+                but.draw(win)
+        else :
+            but.draw(win)
 
 def shoot_range(unit): #Retourne la liste des unités attaquables par une unité
     shoot_list = []
@@ -469,6 +481,7 @@ def state_but(unit): #Permet de griser les boutons
     btn_move.grayed = False
     btn_obs.grayed = False
     btn_atk.grayed = True
+    
     if unit.unit1_moved:
         btn_move.grayed = True
     if unit.unit_observing:
@@ -476,6 +489,10 @@ def state_but(unit): #Permet de griser les boutons
     shoot_list = shoot_range(unit)
     if shoot_list != [] and not(unit.attacked):
         btn_atk.grayed = False
+    if unit.unit1 == "grenade1":
+        btn_gren.grayed = False
+    if unit.unit1 == "grenade0":
+        btn_gren.grayed = True
 
 def display_text(state, turn, id_player, nb_unit, units_alive, error):
     if state == "map creation":
@@ -511,7 +528,7 @@ def display_text(state, turn, id_player, nb_unit, units_alive, error):
                 text = font2.render("Actions", True, DARK_GREEN)
                 win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
                 state_but(selected_unit)
-                display_but()
+                display_but(selected_unit)
             btn_end_turn.draw(win)
         else :
             text = font.render("Opponent's turn", True, (0, 128, 0))
@@ -843,11 +860,7 @@ def main():
     info_sent = False
     selected = False
     selected_obs = ""
-<<<<<<< HEAD
-    nb_unit = UNIT_MAX
-=======
     nb_unit = 3
->>>>>>> 386b41cba9e8d2c5c2291765268768aa1f0e6efc
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
@@ -1086,6 +1099,13 @@ def main():
                                 attacking_unit = True
                                 attacking(selected_unit)
                             print("btn_atk")
+                        elif mouse.id == "btn_gren":##################################### à  faire #####################
+                            if moving_unit:
+                                moving_unit = disable_moving(selected_unit)
+                            if selected_unit.unit1 == "grenade1":
+                                attacking_unit = True
+                                attacking(selected_unit)
+                            print("btn_gren")
                         elif mouse.id == "btn_end_turn":
                             turn+=1
                             if turn == 2 :
