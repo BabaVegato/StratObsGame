@@ -23,11 +23,19 @@ BLANC = (255,255,255)
 NOIR = (0,0,0)
 DARK_GREY = (45,36,30)
 DARK_GREEN = (9,82,40)
-RED = (190,0,0)
+
 GREEN = (107,142,35)
 GREY = (105,105,105)
+RED = (190,0,0)
 LIGHT_RED = (255, 102, 102)
+<<<<<<< HEAD
 UNIT_MAX = 1
+=======
+PURPLE = (160, 32, 240)
+LIGHT_PURPLE = (206, 126, 209)
+BROWN = (139,69,19)
+LIGHT_BROWN = (205,133,63)
+>>>>>>> 386b41cba9e8d2c5c2291765268768aa1f0e6efc
 
 #Dimensions écran
 winWidth = 1300
@@ -110,16 +118,27 @@ class case2(object):
                 color_case = GREY
             pygame.draw.rect(win, color_case, self.hitbox)
             if self.unit1 != "":
-                if self.unit1 == "soldier" and (not(self.unit1_moved) or not(self.attacked) and self.target): #L'unité a encore des actions a effectuer
+                if self.unit1 == "gunner" and (not(self.unit1_moved) or not(self.attacked) and self.target): #L'unité a encore des actions a effectuer
                     pygame.draw.rect(win, RED, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
-                elif self.unit1 == "soldier" and self.unit1_moved:
+                elif self.unit1 == "gunner" and self.unit1_moved:
                     pygame.draw.rect(win, LIGHT_RED, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+                elif self.unit1 == "sniper" and (not(self.unit1_moved) or not(self.attacked) and self.target): #L'unité a encore des actions a effectuer
+                    pygame.draw.rect(win, BROWN, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+                elif self.unit1 == "sniper" and self.unit1_moved:
+                    pygame.draw.rect(win, LIGHT_BROWN, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+                elif self.unit1 == "grenade" and (not(self.unit1_moved) or not(self.attacked) and self.target): #L'unité a encore des actions a effectuer
+                    pygame.draw.rect(win, PURPLE, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+                elif self.unit1 == "grenade" and self.unit1_moved:
+                    pygame.draw.rect(win, LIGHT_PURPLE, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
+                
+                
+
                 if self.highlighted:
                     pygame.draw.rect(win, DARK_GREY, (self.x + (self.width-40)//2, self.y + (self.height-40)//2, 40, 40), 3)
                 if self.unit2 != "" and self.observed:
                     pygame.draw.rect(win, DARK_GREEN, (self.x+5+(self.width-20)//2,self.y+5+(self.width-20)//2,10,10))
             elif self.unit2 != "" and self.observed:
-                if self.unit2 == "soldier":
+                if self.unit2 in list_classes:
                     pygame.draw.rect(win, DARK_GREEN, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
             if self.highlighted_shoot:
                 pygame.draw.rect(win, RED, (self.x + (self.width-40)//2, self.y + (self.height-40)//2, 40, 40), 3)
@@ -210,10 +229,10 @@ class obstacle(object):
             else :
                 pygame.draw.rect(win, DARK_GREY, hitbox)
 
-class soldier(object): #Permet de gérer le placement des unités
-    def __init__(self, x, y):
+class Soldier(object): #Permet de gérer le placement des unités
+    def __init__(self, x, y, c):
         self.selected = False #Drag'n drop
-        self.classe = "soldier"
+        self.classe = c
         self.type = "unit"
         self.selected = False
         self.x = x
@@ -224,11 +243,25 @@ class soldier(object): #Permet de gérer le placement des unités
         self.yMax = y + self.height
         self.hitbox = (self.x, self.y, self.width, self.height)
     def draw(self,win):
-        pygame.draw.rect(win, RED, self.hitbox)
-        if self.selected :
-            x,y = pygame.mouse.get_pos()
-            hitbox = (x-self.width//2,y-self.height//2,self.width, self.height)
-            pygame.draw.rect(win, RED, hitbox)
+        if(self.classe == "gunner"):
+            pygame.draw.rect(win, RED, self.hitbox)
+            if self.selected :
+                x,y = pygame.mouse.get_pos()
+                hitbox = (x-self.width//2,y-self.height//2,self.width, self.height)
+                pygame.draw.rect(win, RED, hitbox)
+        if(self.classe == "grenade"):
+            pygame.draw.rect(win, PURPLE, self.hitbox)
+            if self.selected :
+                x,y = pygame.mouse.get_pos()
+                hitbox = (x-self.width//2,y-self.height//2,self.width, self.height)
+                pygame.draw.rect(win, PURPLE, hitbox)
+        if(self.classe == "sniper"):
+            pygame.draw.rect(win, BROWN, self.hitbox)
+            if self.selected :
+                x,y = pygame.mouse.get_pos()
+                hitbox = (x-self.width//2,y-self.height//2,self.width, self.height)
+                pygame.draw.rect(win, BROWN, hitbox)
+
 
 #Cases :
 case = case(50,50,9,11)
@@ -267,8 +300,11 @@ obsT = obstacle((case.offsetX-3*case.height)//4+3*case.height,case.offsetY+8*cas
 listObs = [obsV1, obsV2, obsV3, obsH1, obsH2, obsH3, obsP1, obsP2, obsP3, obsT]
 
 #Units :
-soldier = soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.height)
-listUnit = [soldier]
+gunner = Soldier(case.offsetX+case.mapWidth+3*case.width,case.offsetY+2*case.height, "gunner")
+grenade = Soldier(15 + case.offsetX+case.mapWidth+3*case.width,50 + case.offsetY+2*case.height, "grenade")
+sniper = Soldier(case.offsetX+case.mapWidth+3*case.width - 5,100 + case.offsetY+2*case.height, "sniper")
+list_unit = [gunner, grenade, sniper]
+list_classes = ["gunner", "grenade", "sniper"]
 
 class bubble(object): #Amélioration possible : permettre le saut de ligne
     def __init__(self, text):
@@ -384,27 +420,50 @@ def display_but():
 
 def shoot_range(unit): #Retourne la liste des unités attaquables par une unité
     shoot_list = []
-    for i in range(1,3): #Vertical
-        if unit.lig+i < 11:
-            if grid[unit.lig + i][unit.col].unit2 != "" and grid[unit.lig + i][unit.col].observed:
-                if not(i==2 and grid[unit.lig + 1][unit.col].wall):
-                    shoot_list.append(grid[unit.lig+i][unit.col])
-        if unit.lig-i >= 0:
-            if grid[unit.lig - i][unit.col].unit2 != "" and grid[unit.lig - i][unit.col].observed:
-                if not(i==2 and grid[unit.lig - 1][unit.col].wall):
-                    shoot_list.append(grid[unit.lig-i][unit.col])
-    for j in range(1,3): #Horizontal
-        if unit.col + j < 9:
-            if grid[unit.lig][unit.col + j].unit2 != "" and grid[unit.lig][unit.col + j].observed:
-                if not(j==2 and grid[unit.lig][unit.col + 1].wall):
-                    shoot_list.append(grid[unit.lig][unit.col+j])
-        if unit.col - j >= 0:
-            if grid[unit.lig][unit.col - j].unit2 != "" and grid[unit.lig][unit.col - j].observed:
-                if not(j==2 and grid[unit.lig][unit.col - 1].wall):
-                    shoot_list.append(grid[unit.lig][unit.col-j])
-    if unit.unit2 != "" and unit.observed:
-        shoot_list.append(unit)
-    return shoot_list
+    if unit.unit1 == "gunner":
+        for i in range(1,3): #Vertical
+            if unit.lig+i < 11:
+                if grid[unit.lig + i][unit.col].unit2 != "" and grid[unit.lig + i][unit.col].observed:
+                    if not(i==2 and grid[unit.lig + 1][unit.col].wall):
+                        shoot_list.append(grid[unit.lig+i][unit.col])
+            if unit.lig-i >= 0:
+                if grid[unit.lig - i][unit.col].unit2 != "" and grid[unit.lig - i][unit.col].observed:
+                    if not(i==2 and grid[unit.lig - 1][unit.col].wall):
+                        shoot_list.append(grid[unit.lig-i][unit.col])
+        for j in range(1,3): #Horizontal
+            if unit.col + j < 9:
+                if grid[unit.lig][unit.col + j].unit2 != "" and grid[unit.lig][unit.col + j].observed:
+                    if not(j==2 and grid[unit.lig][unit.col + 1].wall):
+                        shoot_list.append(grid[unit.lig][unit.col+j])
+            if unit.col - j >= 0:
+                if grid[unit.lig][unit.col - j].unit2 != "" and grid[unit.lig][unit.col - j].observed:
+                    if not(j==2 and grid[unit.lig][unit.col - 1].wall):
+                        shoot_list.append(grid[unit.lig][unit.col-j])
+        if unit.unit2 != "" and unit.observed:
+            shoot_list.append(unit)
+        return shoot_list
+    elif unit.unit1 == "sniper":
+        for i in range(1,11): #Vertical
+            if unit.lig+i < 11:
+                if grid[unit.lig + i][unit.col].unit2 != "" and grid[unit.lig + i][unit.col].observed:
+                    if not(i==2 and grid[unit.lig + 1][unit.col].wall):
+                        shoot_list.append(grid[unit.lig+i][unit.col])
+            if unit.lig-i >= 0:
+                if grid[unit.lig - i][unit.col].unit2 != "" and grid[unit.lig - i][unit.col].observed:
+                    if not(i==2 and grid[unit.lig - 1][unit.col].wall):
+                        shoot_list.append(grid[unit.lig-i][unit.col])
+        for j in range(1,9): #Horizontal
+            if unit.col + j < 9:
+                if grid[unit.lig][unit.col + j].unit2 != "" and grid[unit.lig][unit.col + j].observed:
+                    if not(j==2 and grid[unit.lig][unit.col + 1].wall):
+                        shoot_list.append(grid[unit.lig][unit.col+j])
+            if unit.col - j >= 0:
+                if grid[unit.lig][unit.col - j].unit2 != "" and grid[unit.lig][unit.col - j].observed:
+                    if not(j==2 and grid[unit.lig][unit.col - 1].wall):
+                        shoot_list.append(grid[unit.lig][unit.col-j])
+        if unit.unit2 != "" and unit.observed:
+            shoot_list.append(unit)
+        return shoot_list
 
 def state_but(unit): #Permet de griser les boutons
     btn_move.grayed = False
@@ -437,8 +496,12 @@ def display_text(state, turn, id_player, nb_unit, units_alive, error):
         win.blit(text,(case.offsetX//2+case.offsetX+case.mapWidth-text.get_width()//2, winHeight//14 - text.get_height() // 2))
         text = font2.render("Remaining : "+str(nb_unit), True, NOIR)
         win.blit(text,(case.offsetX+case.mapWidth+case.width, case.offsetY+case.height))
-        text = font2.render("Soldier :", True, NOIR)
+        text = font2.render("Gunner :", True, NOIR)
         win.blit(text,(case.offsetX+case.mapWidth+case.width, case.offsetY+2*case.height))
+        text = font2.render("Grenade :", True, NOIR)
+        win.blit(text,(case.offsetX+case.mapWidth+case.width,50 + case.offsetY+2*case.height))
+        text = font2.render("Sniper :", True, NOIR)
+        win.blit(text,(case.offsetX+case.mapWidth+case.width, 100 + case.offsetY+2*case.height))
     elif state == "game":
         if turn == id_player:
             text = font.render("Your turn", True, (0, 128, 0))
@@ -463,7 +526,8 @@ def display_text(state, turn, id_player, nb_unit, units_alive, error):
             win.blit(text,(winWidth//2 - text.get_width() // 2, winHeight//2 - text.get_height() // 2))
 
 def display_unit():
-    soldier.draw(win)
+    for s in list_unit :
+        s.draw(win)
 
 def set_zone(player, state):
     if state == "units placement":
@@ -561,7 +625,7 @@ def check_placement(obj, case, player):
             if not(case.col == 8 or case.col == 7 or case.lig == 10) and not(case.wall or grid[case.lig][case.col+1].wall or grid[case.lig][case.col+2].wall or grid[case.lig+1][case.col+1].wall) and not(case.lig == 0 or case.lig == 9):
                 return True
     elif obj.type == "unit":
-        if obj.classe == "soldier":
+        if obj.classe in list_classes:
             if not(case.wall) and case.unit1 == "":
                 if player == 1 and case.lig == 0:
                     return True
@@ -586,8 +650,8 @@ def place_obs(obs, case):
     obs.placed = True
 
 def placeUnit(unit, case):
-    if unit.classe == "soldier":
-        case.unit1 = "soldier"
+    if unit.classe in list_classes:
+        case.unit1 = unit.classe
 
 def identify_obs(id):
     for obs in listObs:
@@ -697,9 +761,6 @@ def observe(unit): #évalue chaque direction à partir de la case
 def play_sound(sound):
     global sound_played
     if sound_played == False :
-        print(sound)
-        print(sound)
-        print(sound)
         pygame.mixer.music.load(f'media\{sound}.wav')
         pygame.mixer.music.play(0)
         sound_played = True
@@ -729,14 +790,19 @@ def attack_unit(target, unit): #Fait le calcul des dommages
     kill = False
     prob = 0
     dist = calcul_distance(target, unit)
-    if dist == 0:
-        kill = True
-    elif dist == 1:
-        if random.random() < 3/4 :
+    if unit.unit1 == "gunner":
+        if dist == 0:
             kill = True
-    elif dist == 2:
-        if random.random() < 2/3 :
-            kill = True
+        elif dist == 1:
+            if random.random() < 3/4 :
+                kill = True
+        elif dist == 2:
+            if random.random() < 2/3 :
+                kill = True
+    elif unit.unit1 == "sniper":
+        if random.random() < 1/3 :
+                kill = True
+
     if kill:
         target.unit2 = ""
         print("killed")
@@ -756,13 +822,13 @@ def give_seen_units(idUnitObs):
     i1, j1 = idUnitObs
     case_unit = grid[i1][j1]
     observe(case_unit)
-    
-    case_unit.unit2 = "soldier"
+    list_seen_units = []
+    case_unit.unit2 = "gunner"
     for i in range(11):
         for j in range(9):
             if grid[i][j].observed:
                 grid[i][j].observed = False
-                if grid[i][j].unit1 == "soldier":
+                if grid[i][j].unit1 in list_classes:
                     list_seen_units.append((i, j))
     return list_seen_units
 
@@ -777,7 +843,11 @@ def main():
     info_sent = False
     selected = False
     selected_obs = ""
+<<<<<<< HEAD
     nb_unit = UNIT_MAX
+=======
+    nb_unit = 3
+>>>>>>> 386b41cba9e8d2c5c2291765268768aa1f0e6efc
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
@@ -790,6 +860,7 @@ def main():
     casesObserv = []
     global list_seen_units
     id_killed = None, None
+    ennemy_units_seen = []
     nothing = 0
     #highlighting_mode = False #Les cases sont surlignées au passage de la souris
     moving_unit = False
@@ -799,13 +870,6 @@ def main():
     revenge = False # Réponse du joueur à une demande de nouvelle partie
     master = False # Meneur en cas de rematch
     bubble = [False] # Liste des bulles 1/map_keeping
-
-    ######### TEST ############
-    #grid[0][0].unit1 = "soldier"
-    #grid[1][1].unit1 = "soldier"
-    #grid[0][2].unit2 = "soldier"
-    #grid[0][4].unit1 = "soldier"
-    ###########################
 
     while run:
         for event in pygame.event.get():
@@ -931,7 +995,7 @@ def main():
                 state = "game"
                 info_sent = False
             mouse = ""
-            for unit in listUnit:
+            for unit in list_unit:
                 if pointed(unit):
                     mouse = unit
             for i in range(11):
@@ -990,7 +1054,7 @@ def main():
                     if mouse.type == "button": #Si on clique sur un bouton
                         if mouse.id == "btn_end_turn":
                             turn+=1
-                            if turn == 2 : 
+                            if turn == 2 :
                                 turn = 0
                             action = "fin tour"
                             info_sent = False
@@ -1024,7 +1088,7 @@ def main():
                             print("btn_atk")
                         elif mouse.id == "btn_end_turn":
                             turn+=1
-                            if turn == 2 : 
+                            if turn == 2 :
                                 turn = 0
                             action = "fin tour"
                             info_sent = False
@@ -1072,7 +1136,7 @@ def main():
             units_alive = 0
             for i in range(11):
                 for j in range(9):
-                    if grid[i][j].unit1 == "soldier":
+                    if grid[i][j].unit1 in list_classes:
                         units_alive +=1
             if units_alive == 0:
                 state = "end game"
@@ -1160,19 +1224,22 @@ def main():
             if action == "obs":
                 list_seen_units = give_seen_units(idUnitObs)
                 im, jm = idUnitObs
-                grid[im][jm].unit2 = "soldier"
-                grid[im][jm].observed = "soldier"
+                ennemy_units_seen.append(idUnitObs)
+                for ie, je in ennemy_units_seen:
+                    grid[ie][je].unit2 = "gunner"
+                    grid[ie][je].observed = "gunner"
                 info_sent = False
-            if(id_killed != (None, None)):
+            if((id_killed != (None, None)) & (len(id_killed) == 2)):
                 ik, jk = id_killed
                 grid[ik][jk].unit1 = ""
                 action = ""
                 id_killed = None, None
 
         if turn == id_player & (state=="game") :
+            ennemy_units_seen = []
             if action == "obs":
                 for i, j in list_seen_units:
-                    grid[i][j].unit2 = "soldier"
+                    grid[i][j].unit2 = "gunner"
                 action = ""
                 info_sent = False
             if action == "atk":
