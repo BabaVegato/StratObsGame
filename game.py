@@ -1334,10 +1334,10 @@ def main():
                         if (igr in range(11)) and (jgr in range(9)) :
                             grid[igr][jgr].unit1 = ""
                     action = ""
-                    id_killed = None, None
                     thread_pass_time = threading.Thread(target=explosion_time, args=[id_killed])
                     thread_pass_time.daemon = True
                     thread_pass_time.start()
+                    id_killed = None, None
 
         if turn == id_player & (state=="game") :
             ennemy_units_seen = []
