@@ -1153,7 +1153,7 @@ def main():
                                 play_sound("gunshot" + str(random.randint(1, 5)))
                                 id_killed = attack_unit(mouse, selected_unit)
                             elif selected_unit.unit1 == "grenade1":
-                                play_sound("gunshot" + str(random.randint(1, 5)))
+                                play_sound("grenade" + str(random.randint(1, 2)))
                                 id_killed = attack_unit(mouse, selected_unit)
                                 ig, jg = selected_unit.id
                                 grid[ig][jg].unit1 = "grenade0"
