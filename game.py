@@ -477,6 +477,24 @@ def shoot_range(unit): #Retourne la liste des unités attaquables par une unité
             shoot_list.append(unit)
         return shoot_list
 
+    elif (unit.unit1 == "grenade1") or (unit.unit1 == "grenade0"):
+        shoot_list.append(unit)
+        for i in range(1,3): #Vertical
+            if unit.lig+i < 11:
+                if not(i==2 and grid[unit.lig + 1][unit.col].wall):
+                    shoot_list.append(grid[unit.lig+i][unit.col])
+            if unit.lig-i >= 0:
+                if not(i==2 and grid[unit.lig - 1][unit.col].wall):
+                    shoot_list.append(grid[unit.lig-i][unit.col])
+        for j in range(1,3): #Horizontal
+            if unit.col + j < 9:
+                if not(j==2 and grid[unit.lig][unit.col + 1].wall):
+                    shoot_list.append(grid[unit.lig][unit.col+j])
+            if unit.col - j >= 0:
+                if not(j==2 and grid[unit.lig][unit.col - 1].wall):
+                    shoot_list.append(grid[unit.lig][unit.col-j])
+        return shoot_list
+
 def state_but(unit): #Permet de griser les boutons
     btn_move.grayed = False
     btn_obs.grayed = False
@@ -816,9 +834,14 @@ def attack_unit(target, unit): #Fait le calcul des dommages
         elif dist == 2:
             if random.random() < 2/3 :
                 kill = True
+
     elif unit.unit1 == "sniper":
         if random.random() < 1/3 :
                 kill = True
+
+    elif unit.unit1 == "grenade1":
+        i, j = target.id
+        return [(i,j), (i+1, j), (i-1, j), (i, j+1), (i, j-1)]
 
     if kill:
         target.unit2 = ""
@@ -1004,7 +1027,6 @@ def main():
             if list_seen_units == 1:
                 list_seen_units = 0
             if ((other_really_ready == True) & (ready_to_play == True) & (serv != None)):
-                print("go to game")
                 state = "game"
                 info_sent = False
             mouse = ""
@@ -1117,7 +1139,7 @@ def main():
                     elif mouse.type == "case" and moving_unit: #Si on clique sur une case alors qu'une unité est en mouvement
                         if check_movement(mouse): #Si l'unité peut s'y déplacer
                             sound_played = False
-                            play_sound("walk" + "1" + str(random.randint(1, 3)))
+                            play_sound("walk" + str(random.randint(1, 2)) + str(random.randint(1, 3)))
                             move_unit(selected_unit, mouse)
                             if test_win(id_player):
                                 state = "end game"
@@ -1127,9 +1149,16 @@ def main():
                     elif mouse.type == "case" and attacking_unit: #Si on clique sur une case alors qu'une unité attaque
                         if check_attack(mouse, selected_unit): #Si l'unité peut y attaquer
                             sound_played = False
-                            play_sound("gunshot" + str(random.randint(1, 5)))
+                            if (selected_unit.unit1 == "gunner") or (selected_unit.unit1 == "sniper"):
+                                play_sound("gunshot" + str(random.randint(1, 5)))
+                                id_killed = attack_unit(mouse, selected_unit)
+                            elif selected_unit.unit1 == "grenade1":
+                                play_sound("gunshot" + str(random.randint(1, 5)))
+                                id_killed = attack_unit(mouse, selected_unit)
+                                ig, jg = selected_unit.id
+                                grid[ig][jg].unit1 = "grenade0"
+
                             action = "atk"
-                            id_killed = attack_unit(mouse, selected_unit)
                             attacking_unit = disable_attacking(selected_unit)
                             info_sent = False
                     else:
@@ -1237,6 +1266,7 @@ def main():
 
         if action == "atk":
             id_killed = list_seen_units
+
         if action == "fin tour" :
             init_turn()
             action = ""
@@ -1249,11 +1279,19 @@ def main():
                     grid[ie][je].unit2 = "gunner"
                     grid[ie][je].observed = "gunner"
                 info_sent = False
-            if((id_killed != (None, None)) & (len(id_killed) == 2)):
+            if((id_killed != (None, None)) & isinstance(id_killed, tuple)):
                 ik, jk = id_killed
                 grid[ik][jk].unit1 = ""
                 action = ""
                 id_killed = None, None
+            if isinstance(id_killed, list):
+                print(id_killed)
+                if ((len(id_killed) == 5) & (action == "atk")):
+                    for igr, jgr in id_killed :
+                        if (igr in range(11)) and (jgr in range(9)) :
+                            grid[igr][jgr].unit1 = ""
+                    action = ""
+                    id_killed = None, None
 
         if turn == id_player & (state=="game") :
             ennemy_units_seen = []
@@ -1263,6 +1301,9 @@ def main():
                 action = ""
                 info_sent = False
             if action == "atk":
+                action = ""
+                id_killed = None, None
+            if action == "gren":
                 action = ""
                 id_killed = None, None
 
