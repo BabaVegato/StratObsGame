@@ -24,6 +24,7 @@ NOIR = (0,0,0)
 DARK_GREY = (45,36,30)
 DARK_GREEN = (9,82,40)
 
+ORANGE = (255, 165, 0)
 GREEN = (107,142,35)
 GREY = (105,105,105)
 RED = (190,0,0)
@@ -93,6 +94,7 @@ class case2(object):
         self.width = 50
         self.height = 50
         self.gap = 3
+        self.explosion = False
         ###########
         self.mapWidth = self.colonnes*self.width+(self.colonnes-1)*self.gap
         self.offsetX = (winWidth-self.mapWidth)//2
@@ -105,6 +107,9 @@ class case2(object):
     def draw(self, win):
         if self.wall :
             pygame.draw.rect(win, DARK_GREY, self.hitbox)
+
+        elif self.explosion :
+            pygame.draw.rect(win, ORANGE, (self.x+(self.width-20)//2,self.y+(self.width-20)//2,20,20))
         else:
             if self.reachable:
                 color_case = GREEN 
@@ -872,6 +877,16 @@ def give_seen_units(idUnitObs):
                     list_seen_units.append((i, j))
     return list_seen_units
 
+def explosion_time(id_killed):
+    global grid
+    for i, j in id_killed :
+        if (i in range(11)) and (j in range(9)) :
+            grid[i][j].explosion = True
+    time.sleep(2)
+    for i, j in id_killed :
+        if (i in range(11)) and (j in range(9)) :
+            grid[i][j].explosion = False
+
 def main():
     state = "entry"
     thr_created_conn_esta = False
@@ -1121,13 +1136,20 @@ def main():
                                 attacking_unit = True
                                 attacking(selected_unit)
                             print("btn_atk")
-                        elif mouse.id == "btn_gren":##################################### à  faire #####################
+                        elif (mouse.id == "btn_gren") & ("grenade" in selected_unit.unit1):##################################### à  faire #####################
                             if moving_unit:
                                 moving_unit = disable_moving(selected_unit)
                             if selected_unit.unit1 == "grenade1":
                                 attacking_unit = True
                                 attacking(selected_unit)
                             print("btn_gren")
+                        elif (mouse.id == "btn_gren") & ("grenade" not in selected_unit.unit1):
+                            if moving_unit:
+                                moving_unit = disable_moving(selected_unit)
+                            if not(selected_unit.attacked):
+                                attacking_unit = True
+                                attacking(selected_unit)
+                            print("btn_atk")
                         elif mouse.id == "btn_end_turn":
                             turn+=1
                             if turn == 2 :
@@ -1155,6 +1177,16 @@ def main():
                             elif selected_unit.unit1 == "grenade1":
                                 play_sound("grenade" + str(random.randint(1, 2)))
                                 id_killed = attack_unit(mouse, selected_unit)
+                                for igre, jgre in id_killed :
+                                    if (igre in range(11)) and (jgre in range(9)) :
+                                        grid[igre][jgre].explosion = True
+
+                                        grid[igre][jgre].unit1 = ""
+                                        grid[igre][jgre].unit2 = ""
+                                thread_explo = threading.Thread(target=explosion_time, args=[id_killed])
+                                thread_explo.daemon = True
+                                thread_explo.start()
+                                        
                                 ig, jg = selected_unit.id
                                 grid[ig][jg].unit1 = "grenade0"
 
@@ -1285,13 +1317,15 @@ def main():
                 action = ""
                 id_killed = None, None
             if isinstance(id_killed, list):
-                print(id_killed)
                 if ((len(id_killed) == 5) & (action == "atk")):
                     for igr, jgr in id_killed :
                         if (igr in range(11)) and (jgr in range(9)) :
                             grid[igr][jgr].unit1 = ""
                     action = ""
                     id_killed = None, None
+                    thread_pass_time = threading.Thread(target=explosion_time, args=[id_killed])
+                    thread_pass_time.daemon = True
+                    thread_pass_time.start()
 
         if turn == id_player & (state=="game") :
             ennemy_units_seen = []
