@@ -28,6 +28,7 @@ GREEN = (107,142,35)
 GREY = (105,105,105)
 RED = (190,0,0)
 LIGHT_RED = (255, 102, 102)
+UNIT_MAX = 1
 PURPLE = (160, 32, 240)
 LIGHT_PURPLE = (206, 126, 209)
 BROWN = (139,69,19)
@@ -365,6 +366,7 @@ def init_game_mk():
             case.wall = False
             case.unit2 = ""
             case.highlighted_shoot = False
+            case.highlighted = False
 
 def init_game():
     for i in range(11):
@@ -481,7 +483,7 @@ def state_but(unit): #Permet de griser les boutons
     btn_move.grayed = False
     btn_obs.grayed = False
     btn_atk.grayed = True
-    
+
     if unit.unit1_moved:
         btn_move.grayed = True
     if unit.unit_observing:
@@ -860,7 +862,7 @@ def main():
     info_sent = False
     selected = False
     selected_obs = ""
-    nb_unit = 3
+    nb_unit = UNIT_MAX
     modif = None, None
     ready_to_play = False
     other_ready_to_play = False
@@ -883,6 +885,7 @@ def main():
     revenge = False # Réponse du joueur à une demande de nouvelle partie
     master = False # Meneur en cas de rematch
     bubble = [False] # Liste des bulles 1/map_keeping
+    rematch = False
 
     while run:
         for event in pygame.event.get():
@@ -950,8 +953,8 @@ def main():
                 info_sent = False
 
         elif (state == "map creation") & (turn == id_player):
-            if list_seen_units == 1:
-                list_seen_units = 0
+            if rematch:
+                rematch = False
             nb_obs_mis_total = 0
             for obs in listObs :
                 if obs.placed :
@@ -1001,8 +1004,8 @@ def main():
                 clic = False
 
         elif state == "units placement":   
-            if list_seen_units == 1:
-                list_seen_units = 0
+            if rematch:
+                rematch = False
             if ((other_really_ready == True) & (ready_to_play == True) & (serv != None)):
                 print("go to game")
                 state = "game"
@@ -1186,18 +1189,14 @@ def main():
                         master = True
                     elif bubble[0] and mouse.id == "bubble_yes":
                         print("yes")
-                        init_game_mk()
                         state = "units placement"
-                        list_seen_units = 1
-                        nb_unit = UNIT_MAX
+                        rematch = True
                         info_sent = False
                         bubble[0] = False
                     elif bubble[0] and mouse.id == "bubble_no":
-                        init_game()
+                        print("no")
                         state = "map creation"
-                        list_seen_units = 1
-                        nb_units = UNIT_MAX
-                        init_obstacle()
+                        rematch = True
                         info_sent = False
                         bubble[0] = False
             else :
@@ -1221,19 +1220,32 @@ def main():
                 info, state, idUnitObs, turn, action, list_seen_units)
            
         else:
-            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff 1": ready_to_play, "useful stuff 2" : list_seen_units}
-            info_sent, state, modif, turn, other_ready_to_play, nothing = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play, nothing)
+            info = {"state" : state, "modif": modif, "turn": turn, "useful stuff 1": ready_to_play, "useful stuff 2" : rematch}
+            info_sent, state, modif, turn, other_ready_to_play, rematch = sending_and_receiving(serv, cli, info_sent, info, state, modif, turn, ready_to_play, rematch)
 
 
-        if state == "units placement" and nothing == 1:
+        if state == "units placement" and rematch:
+            print("truc")
             init_game_mk()
-            nothing = 0
+            rematch = False
             nb_unit = UNIT_MAX
+            ready_to_play = False
+            other_ready_to_play = False
+            other_really_ready = False
+            selected = False
+            selected_unit = None
 
-        if state == "map creation" and nothing == 1:
+        if state == "map creation" and rematch:
+            print("on rentre là dedans")
             init_game()
-            nothing = 0
+            init_obstacle()
+            rematch = False
             nb_unit = UNIT_MAX
+            ready_to_play = False
+            other_ready_to_play = False
+            other_really_ready = False
+            selected = False
+            selected_unit = None
 
         if action == "atk":
             id_killed = list_seen_units
