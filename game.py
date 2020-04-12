@@ -368,7 +368,6 @@ def init_game_mk():
             case.target = False
             case.observed = False
             case.reachable = False
-            case.wall = False
             case.unit2 = ""
             case.highlighted_shoot = False
             case.highlighted = False
@@ -1265,6 +1264,8 @@ def main():
 
             if revenge and not(bubble[0]) and master:
                 bubble[0] = True
+                revenge = False
+                master = False
 
         if(state == "game"):
             if action == "obs":
