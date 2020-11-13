@@ -53,5 +53,5 @@ and display that content is licensed under the [3-Clause BSD License](https://op
 
 ## Contributors
 
-* [** Baptiste Rossigneux **](https://github.com/AxelFarr)
-* [** Axel Farrugia **](https://github.com/BabaVegato)
+* [ Baptiste Rossigneux ](https://github.com/BabaVegato)
+* [ Axel Farrugia ](https://github.com/AxelFarr)
