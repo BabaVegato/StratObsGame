@@ -36,7 +36,6 @@ You can observe the map with a unit. When a unit observes the map, it gives its 
 If a unit sees an ennemy and if they are close enough, they can fire on the other unit. Depending on the distance, the unit will kill the other unit, or miss.
 
 ### Winning conditions
-![Winning conditions]
 
 You win if you killed every ennemy units, or if one of your units reached the ennemy row.
 
