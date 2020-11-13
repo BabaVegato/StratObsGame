@@ -11,27 +11,31 @@ We adapted it on python, to allow you to play with someone else in lan.
 
 ## The Rules
 
+### Map creation
 ![Map creation](media/imageMap.PNG "Rules overview : map creation")
 
 To start a game you must first create a map, so that every game is unique !
 
 You just take a piece, and place it on the board, then you wait for the other player to place a piece. The game starts when every piece is on the board.
 
-
+### Placing units
 ![Placing units](media/placeUnits.PNG "Rules overview: soldiers placement")
 
 You place every soldier of your team on your row.
 
+### Moving units
 ![Moving units](media/move.PNG "Rules overview: moving units")
 
 You can move your units by clicking on it, then on move and then click on the green tiles.
 
+### Observing and firing
 ![Observing and firing](media/obs.PNG "Rules overview: observing and firing")
 
 You can observe the map with a unit. When a unit observes the map, it gives its position to the other player, and can no longer move for the rest of the turn... however, they can see every unit on the row and column they are (if not blocked by a block). 
 
 If a unit sees an ennemy and if they are close enough, they can fire on the other unit. Depending on the distance, the unit will kill the other unit, or miss.
 
+### Winning conditions
 ![Winning conditions]
 
 You win if you killed every ennemy units, or if one of your units reached the ennemy row.
