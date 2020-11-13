@@ -11,24 +11,34 @@ We adapted it on python, to allow you to play with someone else in lan.
 
 ## The Rules
 
-![overview boat](media/imageMap.PNG "MicroW overview: boat scale")
+![Map creation](media/imageMap.PNG "Rules overview : map creation")
 
 To start a game you must first create a map, so that every game is unique !
 
-You just take a piece, and place it on the board. 
+You just take a piece, and place it on the board, then you wait for the other player to place a piece. The game starts when every piece is on the board.
 
 
-Coxswain's voice is processed by analog and numerical circuits and encrypted with 128-bit AES before radio transmission. Receiver modules shouldn't be more than 30 meters away from the emitter, which is enough compared to the length of a rowing boat (about 20 meters).
+![Placing units](media/placeUnits.PNG "Rules overview: soldiers placement")
 
-Here is an overview of the inside of each module :
+You place every soldier of your team on your row.
 
-![overview modules](images/Overview_modules.png "MicroW overview: modules")
+![Moving units](media/move.PNG "Rules overview: moving units")
 
-Details about electrical circuits are in [analog](analog) folder. Embedded C codes, radio transmission details and everything digital related are in [digital](digital) folder.
+You can move your units by clicking on it, then on move and then click on the green tiles.
+
+![Observing and firing](media/obs.PNG "Rules overview: observing and firing")
+
+You can observe the map with a unit. When a unit observes the map, it gives its position to the other player, and can no longer move for the rest of the turn... however, they can see every unit on the row and column they are (if not blocked by a block). 
+
+If a unit sees an ennemy and if they are close enough, they can fire on the other unit. Depending on the distance, the unit will kill the other unit, or miss.
+
+![Winning conditions]
+
+You win if you killed every ennemy units, or if one of your units reached the ennemy row.
 
 ## Current project state
 
-
+The game is working, with sound, and can be lauched twice on the same PC to start a game. Launching the game on two different PCs may not work.
 
 ## License
 
